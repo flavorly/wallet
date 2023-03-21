@@ -2,9 +2,9 @@
 
 namespace Flavorly\Wallet\Tests;
 
+use Flavorly\Wallet\WalletServiceProvider;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Orchestra\Testbench\TestCase as Orchestra;
-use Flavorly\Wallet\WalletServiceProvider;
 
 class TestCase extends Orchestra
 {

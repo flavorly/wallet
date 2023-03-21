@@ -2,9 +2,9 @@
 
 namespace Flavorly\Wallet;
 
+use Flavorly\Wallet\Commands\WalletCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
-use Flavorly\Wallet\Commands\WalletCommand;
 
 class WalletServiceProvider extends PackageServiceProvider
 {

@@ -1,4 +1,5 @@
 <?php
+
 return [
-    'decimal_places' => 20
+    'decimal_places' => 20,
 ];
