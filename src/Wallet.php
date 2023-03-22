@@ -133,17 +133,27 @@ final class Wallet
         $this->cache->blockAndWrapInTransaction($closure);
     }
 
-    public function balance(bool $cached = true): float|int|string
+    public function cache(): CacheService
+    {
+        return $this->cache;
+    }
+
+    public function math(): Math
+    {
+        return $this->math;
+    }
+
+    public function balance(bool $cached = true): float
     {
         if (! $cached) {
             $this->refreshBalance();
         }
 
         if ($this->cache->hasCache() && $this->configuration->getBalance() === $this->cache->balance()) {
-            return $this->math->toFloat($this->cache->balance());
+            return (float)$this->math->toFloat($this->cache->balance());
         }
 
-        return $this->math->toFloat($this->configuration->getBalance());
+        return (float) $this->math->toFloat($this->configuration->getBalance());
     }
 
     /**
@@ -169,17 +179,17 @@ final class Wallet
     /**
      * Returns the balance without any formatting or casting
      */
-    public function balanceRaw(bool $cached = true): float|int|string
+    public function balanceRaw(bool $cached = true): int
     {
         if (! $cached) {
             $this->refreshBalance();
         }
 
         if ($this->cache->hasCache() && $this->configuration->getBalance() === $this->cache->balance()) {
-            return $this->cache->balance();
+            return (int) $this->cache->balance();
         }
 
-        return $this->configuration->getBalance();
+        return (int) $this->configuration->getBalance();
     }
 
     /**

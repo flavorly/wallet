@@ -286,11 +286,11 @@ final class Operation
         $differencePositive = $baseMath->abs($difference);
         $allowedCredit = $baseMath->mul($this->wallet->configuration->getMaximumCredit(), 1);
 
-        if ($differencePositive <= $allowedCredit) {
+        if ($currentBalance < $wantedToTransaction && $differencePositive <= $allowedCredit) {
             return true;
         }
 
-        return false;
+        return $currentBalance >= $wantedToTransaction;
     }
 
     /**
