@@ -150,7 +150,7 @@ final class Wallet
         }
 
         if ($this->cache->hasCache() && $this->configuration->getBalance() === $this->cache->balance()) {
-            return (float)$this->math->toFloat($this->cache->balance());
+            return (float) $this->math->toFloat($this->cache->balance());
         }
 
         return (float) $this->math->toFloat($this->configuration->getBalance());
