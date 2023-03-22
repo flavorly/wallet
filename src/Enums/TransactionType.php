@@ -9,8 +9,7 @@ enum TransactionType
 
     public function value(): string
     {
-        return match($this)
-        {
+        return match ($this) {
             TransactionType::CREDIT => 'credit',
             TransactionType::DEBIT => 'debit',
         };

@@ -10,14 +10,16 @@ use Flavorly\Wallet\Services\Math\WalletMathService;
 class WalletService implements WalletInterface
 {
     public ?Configuration $configuration;
+
     public ?CacheService $cache;
+
     public WalletMathService $math;
 
     public function __construct(public readonly HasWallet $model)
     {
         $this->configuration = app(Configuration::class, ['model' => $model]);
         $this->cache = app(CacheService::class, ['prefix' => $model->getKey()]);
-        $this->math = app(WalletMathService::class,['decimalPlaces' => $this->configuration->getDecimals()]);
+        $this->math = app(WalletMathService::class, ['decimalPlaces' => $this->configuration->getDecimals()]);
     }
 
     public function operation(): Operation
@@ -27,7 +29,7 @@ class WalletService implements WalletInterface
 
     protected function refreshBalance(): void
     {
-        $closure = function(){
+        $closure = function () {
             // Sum all the balance
             $balance = $this->model->transactions()->sum('amount');
 
@@ -40,8 +42,9 @@ class WalletService implements WalletInterface
             ]);
         };
 
-        if($this->cache->isWithin()) {
+        if ($this->cache->isWithin()) {
             $closure();
+
             return;
         }
 
@@ -50,13 +53,14 @@ class WalletService implements WalletInterface
 
     public function balance(bool $cached = true): float|int|string
     {
-        if(!$cached) {
-           $this->refreshBalance();
+        if (! $cached) {
+            $this->refreshBalance();
         }
 
-        if($this->cache->hasCache()) {
+        if ($this->cache->hasCache()) {
             return $this->math->toFloat($this->cache->balance());
         }
+
         return $this->math->toFloat($this->configuration->getBalance());
     }
 

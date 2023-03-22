@@ -12,5 +12,6 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 interface HasWallet
 {
     public function wallet(): Wallet;
+
     public function transactions(): MorphMany;
 }

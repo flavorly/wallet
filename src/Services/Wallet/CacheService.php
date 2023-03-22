@@ -14,18 +14,17 @@ class CacheService
     public function __construct(
         protected string $prefix,
         protected bool $isWithin = false,
-    )
-    {
+    ) {
     }
 
     protected function prefix(): string
     {
-        return sprintf('wallet:%s',$this->prefix);
+        return sprintf('wallet:%s', $this->prefix);
     }
 
     protected function blockPrefix(): string
     {
-        return sprintf('wallet-blocks:%s',$this->prefix);
+        return sprintf('wallet-blocks:%s', $this->prefix);
     }
 
     protected function ttl(): CarbonImmutable
@@ -65,9 +64,9 @@ class CacheService
             $this->ttlLock(),
             $this->blockPrefix()
         )
-        ->block($this->waitForLockTime(), function() use($callback){
+        ->block($this->waitForLockTime(), function () use ($callback) {
             $this->isWithin = true;
-            try{
+            try {
                 return $callback();
             } finally {
                 $this->isWithin = false;
@@ -77,20 +76,21 @@ class CacheService
 
     public function blockAndWrapInTransaction(callable $callback): mixed
     {
-        return $this->block(function() use ($callback): mixed {
+        return $this->block(function () use ($callback): mixed {
             // Means another transaction is already on the way
-            if(DB::transactionLevel() > 0){
+            if (DB::transactionLevel() > 0) {
                 return $callback();
             }
 
             // Otherwise create a new one
-            return DB::transaction(function() use ($callback): mixed {
+            return DB::transaction(function () use ($callback): mixed {
                 $result = $callback();
                 throw_if(
                     $result === false || (is_countable($result) && count($result) === 0),
                     WalletDatabaseTransactionException::class,
                     sprintf('Wallet Datatable transaction failed with message: %s', $result)
                 );
+
                 return $result;
             });
         });

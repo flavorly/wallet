@@ -1,4 +1,5 @@
 <?php
+
 return [
     'decimal_places' => 20,
     'currency' => 'USD',
@@ -7,5 +8,5 @@ return [
         'balance' => 'wallet_balance',
         'decimals' => 'wallet_decimal_places',
         'currency' => 'wallet_currency',
-    ]
+    ],
 ];

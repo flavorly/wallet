@@ -4,5 +4,4 @@ namespace Flavorly\Wallet\Concerns;
 
 class HasWallet
 {
-
 }

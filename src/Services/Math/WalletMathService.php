@@ -8,7 +8,7 @@ class WalletMathService implements MathServiceInterface
         protected readonly int $decimalPlaces,
         protected MathService|null $baseMathService = null,
     ) {
-        if(null === $this->baseMathService) {
+        if (null === $this->baseMathService) {
             $this->baseMathService = new MathService(0);
         }
     }
@@ -16,6 +16,7 @@ class WalletMathService implements MathServiceInterface
     public function toInteger(float|int|string $value): string
     {
         $decimalPlaces = $this->baseMathService->powTen($this->decimalPlaces);
+
         return $this->baseMathService->round(
             $this->baseMathService->mul(
                 $value,
@@ -28,6 +29,7 @@ class WalletMathService implements MathServiceInterface
     public function toFloat(float|int|string $value): string
     {
         $decimalPlaces = $this->baseMathService->powTen($this->decimalPlaces);
+
         return $this->baseMathService->div($value, $decimalPlaces, $this->decimalPlaces);
     }
 
