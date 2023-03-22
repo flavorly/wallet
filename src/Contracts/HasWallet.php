@@ -2,11 +2,15 @@
 
 namespace Flavorly\Wallet\Contracts;
 
-use Flavorly\Wallet\Data\WalletConfigurationData;
+use Flavorly\Wallet\Wallet;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
-interface Wallet
+/**
+ * @mixin Model
+ */
+interface HasWallet
 {
-    public function walletConfiguration(): WalletConfigurationData;
+    public function wallet(): Wallet;
     public function transactions(): MorphMany;
 }
