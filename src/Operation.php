@@ -8,6 +8,8 @@ use Flavorly\Wallet\Concerns\EvaluatesClosures;
 use Flavorly\Wallet\Enums\TransactionType;
 use Flavorly\Wallet\Events\TransactionFailedEvent;
 use Flavorly\Wallet\Events\TransactionStartedEvent;
+use Flavorly\Wallet\Exceptions\InvalidOperationArgumentsException;
+use Flavorly\Wallet\Exceptions\NotEnoughBalanceException;
 use Flavorly\Wallet\Exceptions\WalletLockedException;
 use Flavorly\Wallet\Models\Transaction;
 use Illuminate\Contracts\Cache\LockTimeoutException;
@@ -42,7 +44,7 @@ final class Operation
     /**
      * The type of transaction debit/credit
      */
-    protected TransactionType $type;
+    protected ?TransactionType $type = null;
 
     /**
      * Store the amount of teh transaction
@@ -116,6 +118,16 @@ final class Operation
         return ! $this->ok();
     }
 
+
+    /**
+     * Get the underlying transaction
+     */
+    public function transaction(): ?Transaction
+    {
+        return $this->transaction;
+    }
+
+
     /**
      * If the transaction should continue
      */
@@ -124,12 +136,31 @@ final class Operation
         if (! $this->shouldContinue) {
             return false;
         }
+        return true;
+    }
 
-        if ((int) $this->amount === 0) {
-            return false;
+    /**
+     * @return void
+     * @throws InvalidOperationArgumentsException
+     * @throws NotEnoughBalanceException
+     */
+    protected function ensureWeCanDispatch(): void
+    {
+        if ($this->processing) {
+            throw new InvalidOperationArgumentsException('Transaction is already being processed');
         }
 
-        return true;
+        if ((int) $this->amount === 0) {
+            throw new InvalidOperationArgumentsException('Amount cannot be zero');
+        }
+
+        if ($this->type === null) {
+            throw new InvalidOperationArgumentsException('Transaction type must be set');
+        }
+
+        if(!$this->hasEnoughBalanceOperation()){
+            throw new NotEnoughBalanceException('Not enough balance');
+        }
     }
 
     /**
@@ -143,6 +174,9 @@ final class Operation
      */
     public function dispatch(): Operation
     {
+        // Ensure everything is set
+        $this->ensureWeCanDispatch();
+
         // Ensure we don't go further
         if (! $this->shouldContinue()) {
             return $this;
@@ -151,18 +185,15 @@ final class Operation
         // Compile default callbacks
         $this->compileDefaultCallbacks();
 
-        // The stack of callbacks to run
-        $callback = function () {
-            $this->processBeforeCallbacks();
-            $this->processMainCallbacks();
-            $this->processAfterCallbacks();
-        };
-
         try {
             // Retry, by default 1, so should only retry once
             retry(
                 $this->retry,
-                fn () => $this->dispatchAndBlock($callback),
+                fn () => $this->dispatchAndBlock(function () {
+                    $this->processBeforeCallbacks();
+                    $this->processMainCallbacks();
+                    $this->processAfterCallbacks();
+                }),
                 $this->retryDelay,
             );
         } catch (Throwable $e) {
@@ -236,6 +267,48 @@ final class Operation
     }
 
     /**
+     * Checks if the user has enough balance for the operation
+     * Current we use floats to make the calculations which should be enough
+     *
+     * We also allow credit, so if user has credit we will allow the transaction
+     *
+     * @return bool
+     */
+    protected function hasEnoughBalanceOperation(): bool
+    {
+        // Its credit, we can just move on
+        if($this->type->isCredit()){
+            return true;
+        }
+
+        // Start with Base Math, because integers could be tricky to calculate
+        $baseMath = new MathBase($this->wallet->configuration->getDecimals());
+
+        $currentBalance = $this->wallet->balance();
+        $wantedToTransaction = $baseMath->abs($this->amount);
+        $difference = $baseMath->sub($currentBalance, $wantedToTransaction);
+        $differencePositive = $baseMath->abs($difference);
+        $allowedCredit = $baseMath->mul($this->wallet->configuration->getMaximumCredit(),1);
+
+        if($differencePositive <= $allowedCredit){
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Get the amount for the operation
+     *
+     * @return string|float|int
+     */
+    protected function getAmountForOperation(): string|float|int
+    {
+        return $this->type->isDebit() ?
+            $this->wallet->math->negative($this->amount) :
+            $this->wallet->math->toInteger($this->amount);
+    }
+
+    /**
      * Process the main callbacks
      */
     protected function processMainCallbacks(): void
@@ -289,14 +362,11 @@ final class Operation
         // After the transaction is inserted, balance refresh callback
         // will also be called and ensures that the balance is updated
         $this->callback(callback: function (): void {
-            $amount = $this->type->isDebit() ?
-                $this->wallet->math->negative($this->amount) :
-                $this->wallet->math->toInteger($this->amount);
             /** @phpstan-ignore-next-line */
             $this->transaction = $this->wallet->model->transactions()->create([
                 'uuid' => Str::uuid(),
                 'type' => $this->type->value(),
-                'amount' => $amount,
+                'amount' => $this->getAmountForOperation(),
                 'decimal_places' => $this->wallet->configuration->getDecimals(),
                 'meta' => $this->meta,
             ]);
@@ -384,6 +454,16 @@ final class Operation
         $this->shouldContinue = $this->evaluate($condition);
 
         return $this;
+    }
+
+    /**
+     * Pretends a operation that never goes through but still evaluates the callbacks
+     *
+     * @return $this
+     */
+    public function pretend(): Operation
+    {
+        return $this->if(false);
     }
 
     /**

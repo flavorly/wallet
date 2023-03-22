@@ -31,6 +31,11 @@ final class Configuration
         return $this->model->getAttribute($this->getBalanceColumn());
     }
 
+    public function getMaximumCredit(): float|int|string
+    {
+        return $this->model->getAttribute(config('laravel-wallet.columns.credit', 'wallet_credit')) ?? 0;
+    }
+
     public function getBalanceColumn(): string
     {
         return config('laravel-wallet.columns.balance', 'wallet_balance');

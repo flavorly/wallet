@@ -3,6 +3,7 @@
 namespace Flavorly\Wallet;
 
 use Flavorly\Wallet\Contracts\WalletContract as WalletInterface;
+use Flavorly\Wallet\Exceptions\WalletLockedException;
 
 /**
  * A plain and simple wallet API for Laravel & Eloquent Model
@@ -50,6 +51,58 @@ final class Wallet
         $this->cache = app(CacheService::class, ['prefix' => $model->getKey()]);
         $this->math = app(Math::class,['decimalPlaces' => $this->configuration->getDecimals()]);
     }
+
+    /**
+     * API Wrapper for the operation class to credit the wallet
+     *
+     * @param  float|int|string  $amount
+     * @param  array  $meta
+     * @param  bool  $throw
+     * @return bool
+     * @throws WalletLockedException
+     * @throws \Throwable
+     */
+    public function credit(float|int|string $amount, array $meta = [], bool $throw = false): bool
+    {
+        return $this
+            ->operation()
+            ->meta($meta)
+            ->credit($amount)
+            ->throw($throw)
+            ->dispatch()
+            ->ok();
+    }
+
+    /**
+     *  API Wrapper for the operation class to debig the wallet
+     * @param  float|int|string  $amount
+     * @param  array  $meta
+     * @param  bool  $throw
+     * @return bool
+     * @throws WalletLockedException
+     * @throws \Throwable
+     */
+    public function debit(float|int|string $amount, array $meta = [], bool $throw = false): bool
+    {
+        return $this
+            ->operation()
+            ->meta($meta)
+            ->debit($amount)
+            ->throw($throw)
+            ->dispatch()
+            ->ok();
+    }
+
+//    /**
+//     * Magic method that provides a bridge to the operation class itself
+//     * @param $name
+//     * @param $arguments
+//     * @return mixed
+//     */
+//    public function __call($name, $arguments)
+//    {
+//        return (new Operation($this))->{$name}(...$arguments)->dispatch();
+//    }
 
     /**
      * Creates a new operation
@@ -111,12 +164,56 @@ final class Wallet
             $this->refreshBalance();
         }
 
-        if($this->cache->hasCache()) {
+        if($this->cache->hasCache() && $this->configuration->getBalance() === $this->cache->balance()) {
             return $this->math->toFloat($this->cache->balance());
         }
         return $this->math->toFloat($this->configuration->getBalance());
     }
 
+    /**
+     * Check if the wallet/model has enough balance for the given amount
+     *
+     * @param  float|int|string  $amount
+     * @return bool
+     * @throws \Throwable
+     */
+    public function hasBalanceFor(float|int|string $amount): bool
+    {
+        try{
+            $this
+                ->operation()
+                ->debit($amount)
+                ->pretend()
+                ->dispatch();
+            return true;
+        }catch (\Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Returns the balance without any formatting or casting
+     *
+     * @param  bool  $cached
+     * @return float|int|string
+     */
+    public function balanceRaw(bool $cached = true): float|int|string
+    {
+        if(!$cached) {
+            $this->refreshBalance();
+        }
+
+        if($this->cache->hasCache() && $this->configuration->getBalance() === $this->cache->balance()) {
+            return $this->cache->balance();
+        }
+        return $this->configuration->getBalance();
+    }
+
+    /**
+     * Checks if its currently locked
+     *
+     * @return bool
+     */
     public function locked(): bool
     {
         return $this->cache->locked();
