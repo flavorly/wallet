@@ -8,10 +8,6 @@ trait EvaluatesClosures
 {
     /**
      * Stolen from Filament, evaluate the closure with given params, and exclude some.
-     *
-     * @param $value
-     * @param  array  $parameters
-     * @return mixed
      */
     protected function evaluate($value, array $parameters = []): mixed
     {
@@ -21,7 +17,7 @@ trait EvaluatesClosures
                 $parameters
             );
         }
+
         return $value;
     }
-
 }
