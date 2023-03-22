@@ -7,9 +7,6 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Transaction extends Model
 {
-    public const TYPE_DEPOSIT = 'add';
-    public const TYPE_WITHDRAW = 'remove';
-
     /**
      * @var string[]
      */
@@ -35,5 +32,4 @@ class Transaction extends Model
     {
         return $this->morphTo();
     }
-
 }

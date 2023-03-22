@@ -1,19 +1,24 @@
 <?php
 declare(strict_types=1);
 
-namespace Flavorly\Wallet\Services\Math;
+namespace Flavorly\Wallet;
 
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
+use Flavorly\Wallet\Contracts\MathInterface;
 
-class MathService
+/**
+ * A simple wrapper around Brick\Math that ensures a better interface
+ * for calculations for a given scale.
+ */
+final class MathBase implements MathInterface
 {
     public function __construct(
         protected readonly int $scale,
     ) {
     }
 
-    public function add(float|int|string $first, float|int|string $second): string
+    public function add(float|int|string $first, float|int|string $second, ?int $scale = null): string
     {
         return (string) BigDecimal::of($first)
             ->plus(BigDecimal::of($second))

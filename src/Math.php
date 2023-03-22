@@ -1,18 +1,33 @@
 <?php
+declare(strict_types=1);
 
-namespace Flavorly\Wallet\Services\Math;
+namespace Flavorly\Wallet;
 
-class WalletMathService implements MathServiceInterface
+use Flavorly\Wallet\Contracts\MathInterface;
+
+/**
+ * A simple wrapper around Brick\Math that ensures a better interface
+ * But also providers a correct conversion from float to integer
+ * in order to be saved in the database without any issues
+ * Please see Brick\Money for more information about the concept
+ * on why we use Integers instead of floats
+ *
+ */
+class Math implements MathInterface
 {
     public function __construct(
         protected readonly int $decimalPlaces,
-        protected MathService|null $baseMathService = null,
+        protected MathBase|null $baseMathService = null,
     ) {
-        if(null === $this->baseMathService) {
-            $this->baseMathService = new MathService(0);
-        }
+        $this->baseMathService = new MathBase(0);
     }
 
+    /**
+     * Converts a float into a integer based on the given scale
+     *
+     * @param  float|int|string  $value
+     * @return string
+     */
     public function toInteger(float|int|string $value): string
     {
         $decimalPlaces = $this->baseMathService->powTen($this->decimalPlaces);
@@ -25,6 +40,12 @@ class WalletMathService implements MathServiceInterface
         );
     }
 
+    /**
+     * Converts a big integer into a float based on the given scale
+     *
+     * @param  float|int|string  $value
+     * @return string
+     */
     public function toFloat(float|int|string $value): string
     {
         $decimalPlaces = $this->baseMathService->powTen($this->decimalPlaces);

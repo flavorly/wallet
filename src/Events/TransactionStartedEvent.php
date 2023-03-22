@@ -1,7 +1,7 @@
 <?php
 
 namespace Flavorly\Wallet\Events;
-use Flavorly\Wallet\Contracts\HasWallet;
+use Flavorly\Wallet\Contracts\WalletContract;
 use Flavorly\Wallet\Enums\TransactionType;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Events\Dispatchable;
@@ -13,7 +13,7 @@ class TransactionStartedEvent
     use SerializesModels;
 
     public function __construct(
-        public HasWallet|Model $model,
+        public WalletContract|Model $model,
         public TransactionType $type,
         public int|float|string $amount,
     ) {}

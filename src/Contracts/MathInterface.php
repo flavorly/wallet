@@ -1,8 +1,8 @@
 <?php
 
-namespace Flavorly\Wallet\Services\Math;
+namespace Flavorly\Wallet\Contracts;
 
-interface MathServiceInterface
+interface MathInterface
 {
     public function add(float|int|string $first, float|int|string $second, ?int $scale = null): string;
 

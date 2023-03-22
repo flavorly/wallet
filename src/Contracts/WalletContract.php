@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 /**
  * @mixin Model
  */
-interface HasWallet
+interface WalletContract
 {
     public function wallet(): Wallet;
     public function transactions(): MorphMany;

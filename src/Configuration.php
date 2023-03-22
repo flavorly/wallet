@@ -2,12 +2,17 @@
 
 namespace Flavorly\Wallet;
 
-use Flavorly\Wallet\Contracts\HasWallet;
+use Flavorly\Wallet\Contracts\WalletContract;
 
-class Configuration
+/**
+ * Ensures the configuration is bootstrapped and available to the wallet.
+ * We pass the current model to the configuration class
+ * So we can grab an additional configuration from the model
+ */
+final class Configuration
 {
     public function __construct(
-        private readonly HasWallet $model,
+        private readonly WalletContract $model,
     ) {
     }
 
