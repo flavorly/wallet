@@ -1,6 +1,7 @@
 <?php
 
 namespace Flavorly\Wallet\Events;
+
 use Flavorly\Wallet\Contracts\WalletContract;
 use Flavorly\Wallet\Enums\TransactionType;
 use Illuminate\Database\Eloquent\Model;
@@ -16,5 +17,6 @@ class TransactionStartedEvent
         public WalletContract|Model $model,
         public TransactionType $type,
         public int|float|string $amount,
-    ) {}
+    ) {
+    }
 }

@@ -9,22 +9,17 @@ use Flavorly\Wallet\Exceptions\WalletLockedException;
  * A plain and simple wallet API for Laravel & Eloquent Model
  * This will ensure atomic locks across the given class/model
  * & also leverage the cache to reduce the number of queries & race conditions
- *
  */
 final class Wallet
 {
     /**
      * Stores the configuration for the wallet
      * such as decimals, currency, columns to update etc
-     *
-     * @var Configuration|null
      */
     public ?Configuration $configuration;
 
     /**
      * Cache service is responsible for caching & locking
-     *
-     * @var CacheService|null
      */
     public ?CacheService $cache;
 
@@ -32,8 +27,6 @@ final class Wallet
      * Math Service is responsible for making calculation
      * Under the hood it uses Brick\Math to perform arbitrary precision calculations
      * The wallet math class is different since it casts all the floats as integers
-     *
-     * @var Math
      */
     public Math $math;
 
@@ -41,24 +34,17 @@ final class Wallet
      * Bootstrap the class & resolve all necessary services
      * We take the current Eloquent model as a parameter
      * that should implement the WalletContract
-     *
-     *
-     * @param  WalletInterface  $model
      */
     public function __construct(public readonly WalletInterface $model)
     {
         $this->configuration = app(Configuration::class, ['model' => $model]);
         $this->cache = app(CacheService::class, ['prefix' => $model->getKey()]);
-        $this->math = app(Math::class,['decimalPlaces' => $this->configuration->getDecimals()]);
+        $this->math = app(Math::class, ['decimalPlaces' => $this->configuration->getDecimals()]);
     }
 
     /**
      * API Wrapper for the operation class to credit the wallet
      *
-     * @param  float|int|string  $amount
-     * @param  array  $meta
-     * @param  bool  $throw
-     * @return bool
      * @throws WalletLockedException
      * @throws \Throwable
      */
@@ -75,10 +61,7 @@ final class Wallet
 
     /**
      *  API Wrapper for the operation class to debig the wallet
-     * @param  float|int|string  $amount
-     * @param  array  $meta
-     * @param  bool  $throw
-     * @return bool
+     *
      * @throws WalletLockedException
      * @throws \Throwable
      */
@@ -108,8 +91,6 @@ final class Wallet
      * Creates a new operation
      * This is the main entry point to create transaction
      * Wallet class is just an API for the actual underlying operation object
-     *
-     * @return Operation
      */
     public function operation(): Operation
     {
@@ -127,12 +108,10 @@ final class Wallet
      * The only exception is when we perform within the transaction itself
      * the cache()->isWithin() will return true if we are currently performing
      * a transaction and so we have already applied a lock inside it.
-     *
-     * @return void
      */
     protected function refreshBalance(): void
     {
-        $closure = function(){
+        $closure = function () {
             // Sum all the balance
             $balance = $this->model->transactions()->sum('amount');
 
@@ -145,74 +124,66 @@ final class Wallet
             ]);
         };
 
-        if($this->cache->isWithin()) {
+        if ($this->cache->isWithin()) {
             $closure();
+
             return;
         }
 
         $this->cache->blockAndWrapInTransaction($closure);
     }
 
-    /**
-     *
-     * @param  bool  $cached
-     * @return float|int|string
-     */
     public function balance(bool $cached = true): float|int|string
     {
-        if(!$cached) {
+        if (! $cached) {
             $this->refreshBalance();
         }
 
-        if($this->cache->hasCache() && $this->configuration->getBalance() === $this->cache->balance()) {
+        if ($this->cache->hasCache() && $this->configuration->getBalance() === $this->cache->balance()) {
             return $this->math->toFloat($this->cache->balance());
         }
+
         return $this->math->toFloat($this->configuration->getBalance());
     }
 
     /**
      * Check if the wallet/model has enough balance for the given amount
      *
-     * @param  float|int|string  $amount
-     * @return bool
      * @throws \Throwable
      */
     public function hasBalanceFor(float|int|string $amount): bool
     {
-        try{
+        try {
             $this
                 ->operation()
                 ->debit($amount)
                 ->pretend()
                 ->dispatch();
+
             return true;
-        }catch (\Exception $e) {
+        } catch (\Exception $e) {
             return false;
         }
     }
 
     /**
      * Returns the balance without any formatting or casting
-     *
-     * @param  bool  $cached
-     * @return float|int|string
      */
     public function balanceRaw(bool $cached = true): float|int|string
     {
-        if(!$cached) {
+        if (! $cached) {
             $this->refreshBalance();
         }
 
-        if($this->cache->hasCache() && $this->configuration->getBalance() === $this->cache->balance()) {
+        if ($this->cache->hasCache() && $this->configuration->getBalance() === $this->cache->balance()) {
             return $this->cache->balance();
         }
+
         return $this->configuration->getBalance();
     }
 
     /**
      * Checks if its currently locked
-     *
-     * @return bool
      */
     public function locked(): bool
     {

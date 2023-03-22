@@ -118,7 +118,6 @@ final class Operation
         return ! $this->ok();
     }
 
-
     /**
      * Get the underlying transaction
      */
@@ -126,7 +125,6 @@ final class Operation
     {
         return $this->transaction;
     }
-
 
     /**
      * If the transaction should continue
@@ -136,11 +134,11 @@ final class Operation
         if (! $this->shouldContinue) {
             return false;
         }
+
         return true;
     }
 
     /**
-     * @return void
      * @throws InvalidOperationArgumentsException
      * @throws NotEnoughBalanceException
      */
@@ -158,7 +156,7 @@ final class Operation
             throw new InvalidOperationArgumentsException('Transaction type must be set');
         }
 
-        if(!$this->hasEnoughBalanceOperation()){
+        if (! $this->hasEnoughBalanceOperation()) {
             throw new NotEnoughBalanceException('Not enough balance');
         }
     }
@@ -271,13 +269,11 @@ final class Operation
      * Current we use floats to make the calculations which should be enough
      *
      * We also allow credit, so if user has credit we will allow the transaction
-     *
-     * @return bool
      */
     protected function hasEnoughBalanceOperation(): bool
     {
         // Its credit, we can just move on
-        if($this->type->isCredit()){
+        if ($this->type->isCredit()) {
             return true;
         }
 
@@ -288,18 +284,17 @@ final class Operation
         $wantedToTransaction = $baseMath->abs($this->amount);
         $difference = $baseMath->sub($currentBalance, $wantedToTransaction);
         $differencePositive = $baseMath->abs($difference);
-        $allowedCredit = $baseMath->mul($this->wallet->configuration->getMaximumCredit(),1);
+        $allowedCredit = $baseMath->mul($this->wallet->configuration->getMaximumCredit(), 1);
 
-        if($differencePositive <= $allowedCredit){
+        if ($differencePositive <= $allowedCredit) {
             return true;
         }
+
         return false;
     }
 
     /**
      * Get the amount for the operation
-     *
-     * @return string|float|int
      */
     protected function getAmountForOperation(): string|float|int
     {

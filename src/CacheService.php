@@ -21,33 +21,27 @@ final class CacheService
     public function __construct(
         protected string $prefix,
         protected bool $isWithin = false,
-    )
-    {}
+    ) {
+    }
 
     /**
      * Get the cache prefix
-     *
-     * @return string
      */
     protected function prefix(): string
     {
-        return sprintf('wallet:%s',$this->prefix);
+        return sprintf('wallet:%s', $this->prefix);
     }
 
     /**
      * Get the prefix used for Locks
-     *
-     * @return string
      */
     protected function blockPrefix(): string
     {
-        return sprintf('wallet-blocks:%s',$this->prefix);
+        return sprintf('wallet-blocks:%s', $this->prefix);
     }
 
     /**
      * The time to save the balance on Redis/Cache
-     *
-     * @return CarbonImmutable
      */
     protected function ttl(): CarbonImmutable
     {
@@ -59,8 +53,6 @@ final class CacheService
      * This will ensure that no other transaction is being processed at same time
      * We assume 30 seconds is a good window for processing a transaction
      * After 30 seconds or the callback is done, the lock will be released automatically
-     *
-     * @return int
      */
     protected function ttlLock(): int
     {
@@ -70,8 +62,6 @@ final class CacheService
     /**
      * How much seconds to wait in case another lock is in place
      * After the time is over, an exception will be thrown and the transaction will be aborted
-     *
-     * @return int
      */
     protected function waitForLockTime(): int
     {
@@ -90,8 +80,6 @@ final class CacheService
 
     /**
      * Check if there is currently Balance cache in place
-     *
-     * @return bool
      */
     public function hasCache(): bool
     {
@@ -100,8 +88,6 @@ final class CacheService
 
     /**
      * Get the current Balance in cache
-     *
-     * @return float|int|string
      */
     public function balance(): float|int|string
     {
@@ -121,9 +107,6 @@ final class CacheService
      * So we know we are currently about to process a block of code
      * Try finally will ensure that the flag is set to false always when its ended
      * no matter if an exception is thrown or not
-     *
-     * @param  callable  $callback
-     * @return mixed
      */
     public function block(callable $callback): mixed
     {
@@ -132,9 +115,9 @@ final class CacheService
             $this->ttlLock(),
             $this->blockPrefix()
         )
-        ->block($this->waitForLockTime(), function() use($callback){
+        ->block($this->waitForLockTime(), function () use ($callback) {
             $this->isWithin = true;
-            try{
+            try {
                 return $callback();
             } finally {
                 $this->isWithin = false;
@@ -144,26 +127,24 @@ final class CacheService
 
     /**
      * Same as the block but this also wraps the callback in a database transaction
-     *
-     * @param  callable  $callback
-     * @return mixed
      */
     public function blockAndWrapInTransaction(callable $callback): mixed
     {
-        return $this->block(function() use ($callback): mixed {
+        return $this->block(function () use ($callback): mixed {
             // Means another transaction is already on the way
-            if(DB::transactionLevel() > 0){
+            if (DB::transactionLevel() > 0) {
                 return $callback();
             }
 
             // Otherwise create a new one
-            return DB::transaction(function() use ($callback): mixed {
+            return DB::transaction(function () use ($callback): mixed {
                 $result = $callback();
                 throw_if(
                     $result === false || (is_countable($result) && count($result) === 0),
                     WalletDatabaseTransactionException::class,
                     sprintf('Wallet Datatable transaction failed with message: %s', $result)
                 );
+
                 return $result;
             });
         });
@@ -172,9 +153,6 @@ final class CacheService
     /**
      * Check if there is a current lock in place
      * This is only available when the cache driver is Redis
-     *
-     *
-     * @return bool
      */
     public function locked(): bool
     {
@@ -188,7 +166,6 @@ final class CacheService
 
     /**
      * Check if we are currently within a block and already have a safe lock in place
-     * @return bool
      */
     public function isWithin(): bool
     {
@@ -198,9 +175,6 @@ final class CacheService
     /**
      * Put some value in the cache
      * In this case only for balance but could be used for another scenario in the future
-     *
-     * @param  float|int|string  $balance
-     * @return void
      */
     public function put(float|int|string $balance): void
     {

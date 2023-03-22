@@ -13,25 +13,22 @@ trait HasWallet
     /**
      * Creates a new wallet instance
      * Ensures also that we only boot once
-     *
-     * @return Wallet
      */
     public function wallet(): Wallet
     {
-        if($this->wallet){
+        if ($this->wallet) {
             return $this->wallet;
         }
         $this->wallet = new Wallet($this);
+
         return $this->wallet;
     }
 
     /**
      * Get all the transactions for the model.
-     *
-     * @return MorphMany
      */
     public function transactions(): MorphMany
     {
-        return $this->morphMany(Transaction::class,'transactionable');
+        return $this->morphMany(Transaction::class, 'transactionable');
     }
 }
