@@ -1,0 +1,5 @@
+<?php
+return [
+    'decimal_places' => 20,
+    'currency' => 'USD',
+];

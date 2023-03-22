@@ -4,4 +4,5 @@ namespace Flavorly\Wallet;
 
 class Wallet
 {
+
 }

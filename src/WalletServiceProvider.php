@@ -12,8 +12,8 @@ class WalletServiceProvider extends PackageServiceProvider
     {
         $package
             ->name('wallet')
-            ->hasConfigFile()
-            ->hasMigration('add_transactions_and-wallet')
+            ->hasConfigFile('laravel-wallet')
+            ->hasMigration('add_transactions_and_wallet')
             ->hasCommand(WalletCommand::class);
     }
 }
