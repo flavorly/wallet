@@ -194,6 +194,7 @@ final class Wallet
                 ->throw(false)
                 ->pretend()
                 ->dispatch();
+
             return true;
         } catch (\Exception $e) {
             return false;

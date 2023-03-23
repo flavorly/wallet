@@ -35,8 +35,6 @@ trait HasWallet
 
     /**
      * Laravel get Balance Attribute
-     *
-     * @return string
      */
     public function getBalanceAttribute(): string
     {
@@ -45,8 +43,6 @@ trait HasWallet
 
     /**
      * Laravel get Balance Attribute but without any cache
-     *
-     * @return string
      */
     public function getBalanceWithoutCacheAttribute(): string
     {
@@ -56,11 +52,8 @@ trait HasWallet
     /**
      * Alias for Credit
      *
-     * @param  float|int|string  $amount
-     * @param  array  $meta
      * @param  string|null  $endpoint
-     * @param  bool  $throw
-     * @return string
+     *
      * @throws WalletLockedException
      * @throws \Throwable
      */
@@ -77,11 +70,8 @@ trait HasWallet
     /**
      * Alias for debit
      *
-     * @param  float|int|string  $amount
-     * @param  array  $meta
      * @param  string|null  $endpoint
-     * @param  bool  $throw
-     * @return string
+     *
      * @throws WalletLockedException
      * @throws \Throwable
      */
@@ -97,9 +87,6 @@ trait HasWallet
 
     /**
      * Alias for HasBalanceFor
-     *
-     * @param  float|int|string  $amount
-     * @return bool
      */
     public function hasBalanceFor(float|int|string $amount): bool
     {
