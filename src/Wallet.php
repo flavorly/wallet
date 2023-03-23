@@ -173,7 +173,6 @@ final class Wallet
     /**
      * Return the current Balance as a Money instance
      *
-     * @return Money
      * @throws NumberFormatException
      * @throws RoundingNecessaryException
      * @throws UnknownCurrencyException

@@ -48,7 +48,6 @@ trait HasWallet
     /**
      * Laravel get Balance Attribute with instance of money
      *
-     * @return Money
      * @throws NumberFormatException
      * @throws RoundingNecessaryException
      * @throws UnknownCurrencyException
