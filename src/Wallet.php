@@ -39,7 +39,7 @@ final class Wallet
     {
         $this->configuration = app(Configuration::class, ['model' => $model]);
         $this->cache = app(CacheService::class, ['prefix' => $model->getKey()]);
-        $this->math = app(Math::class, ['decimalPlaces' => $this->configuration->getDecimals()]);
+        $this->math = app(Math::class, ['floatScale' => $this->configuration->getDecimals()]);
     }
 
     /**
@@ -143,17 +143,17 @@ final class Wallet
         return $this->math;
     }
 
-    public function balance(bool $cached = true): float
+    public function balance(bool $cached = true): string
     {
         if (! $cached) {
             $this->refreshBalance();
         }
 
         if ($this->cache->hasCache() && $this->configuration->getBalance() === $this->cache->balance()) {
-            return (float)$this->math->toFloat($this->cache->balance());
+            return $this->math->intToFloat($this->cache->balance());
         }
 
-        return (float) $this->math->toFloat($this->configuration->getBalance());
+        return $this->math->intToFloat($this->configuration->getBalance());
     }
 
     /**

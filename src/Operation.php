@@ -278,13 +278,13 @@ final class Operation
         }
 
         // Start with Base Math, because integers could be tricky to calculate
-        $baseMath = new MathBase($this->wallet->configuration->getDecimals());
+        $math = $this->wallet->math();
 
         $currentBalance = $this->wallet->balance();
-        $wantedToTransaction = $baseMath->abs($this->amount);
-        $difference = $baseMath->sub($currentBalance, $wantedToTransaction);
-        $differencePositive = $baseMath->abs($difference);
-        $allowedCredit = $baseMath->mul($this->wallet->configuration->getMaximumCredit(), 1);
+        $wantedToTransaction = $math->abs($this->amount);
+        $difference = $math->sub($currentBalance, $wantedToTransaction);
+        $differencePositive = $math->abs($difference);
+        $allowedCredit = $math->ensureScale($this->wallet->configuration->getMaximumCredit());
 
         if ($currentBalance < $wantedToTransaction && $differencePositive <= $allowedCredit) {
             return true;
@@ -299,8 +299,8 @@ final class Operation
     protected function getAmountForOperation(): string|float|int
     {
         return $this->type->isDebit() ?
-            $this->wallet->math->negative($this->amount) :
-            $this->wallet->math->toInteger($this->amount);
+            $this->wallet->math->negativeInteger($this->amount) :
+            $this->wallet->math->floatToInt($this->amount);
     }
 
     /**

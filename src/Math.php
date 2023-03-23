@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Flavorly\Wallet;
 
-use Flavorly\Wallet\Contracts\MathInterface;
+use Brick\Math\BigDecimal;
+use Brick\Math\RoundingMode;
 
 /**
  * A simple wrapper around Brick\Math that ensures a better interface
@@ -13,27 +14,26 @@ use Flavorly\Wallet\Contracts\MathInterface;
  * Please see Brick\Money for more information about the concept
  * on why we use Integers instead of floats
  */
-class Math implements MathInterface
+final class Math
 {
     public function __construct(
-        protected readonly int $decimalPlaces,
-        protected MathBase|null $baseMathService = null,
+        protected readonly int $floatScale,
+        protected readonly int $integerScale = 20,
     ) {
-        $this->baseMathService = new MathBase(0);
     }
 
     /**
      * Converts a float into a integer based on the given scale
      */
-    public function toInteger(float|int|string $value): string
+    public function floatToInt(float|int|string $value): string
     {
-        $decimalPlaces = $this->baseMathService->powTen($this->decimalPlaces);
+        $decimalPlaces = $this->powTen($this->floatScale);
 
-        return $this->baseMathService->round(
-            $this->baseMathService->mul(
+        return $this->round(
+            $this->mul(
                 $value,
                 $decimalPlaces,
-                $this->decimalPlaces
+                $this->floatScale
             )
         );
     }
@@ -41,86 +41,165 @@ class Math implements MathInterface
     /**
      * Converts a big integer into a float based on the given scale
      */
-    public function toFloat(float|int|string $value): string
+    public function intToFloat(float|int|string $value): string
     {
-        $decimalPlaces = $this->baseMathService->powTen($this->decimalPlaces);
+        $decimalPlaces = $this->powTen($this->floatScale);
 
-        return $this->baseMathService->div($value, $decimalPlaces, $this->decimalPlaces);
+        return $this->div($value, $decimalPlaces, $this->floatScale);
+    }
+
+    public function addInteger(float|int|string $first, float|int|string $second, ?int $scale = null): string
+    {
+        return $this->add(
+            $this->floatToInt($first),
+            $this->floatToInt($second),
+        );
+    }
+
+    public function subInteger(float|int|string $first, float|int|string $second, ?int $scale = null): string
+    {
+        return $this->sub(
+            $this->floatToInt($first),
+            $this->floatToInt($second)
+        );
+    }
+
+    public function divInteger(float|int|string $first, float|int|string $second, ?int $scale = null): string
+    {
+        return $this->div(
+            $this->floatToInt($first),
+            $this->floatToInt($second),
+            $scale ?? $this->floatScale
+        );
+    }
+
+    public function mulInteger(float|int|string $first, float|int|string $second, ?int $scale = null): string
+    {
+        return $this->mul(
+            $this->floatToInt($first),
+            $this->floatToInt($second)
+        );
+    }
+
+    public function powInteger(float|int|string $first, float|int|string $second, ?int $scale = null): string
+    {
+        return $this->pow(
+            $this->floatToInt($first),
+            $this->floatToInt($second),
+        );
+    }
+
+    public function powTenInteger(float|int|string $number): string
+    {
+        return $this->powTen($this->floatToInt($number));
+    }
+
+    public function ceilInteger(float|int|string $number): string
+    {
+        return $this->ceil($this->floatToInt($number));
+    }
+
+    public function floorInteger(float|int|string $number): string
+    {
+        return $this->floor($this->floatToInt($number));
+    }
+
+    public function roundInteger(float|int|string $number, int $precision = 0): string
+    {
+        return $this->round($this->floatToInt($number), $precision);
+    }
+
+    public function absInteger(float|int|string $number): string
+    {
+        return $this->abs($this->floatToInt($number));
+    }
+
+    public function negativeInteger(float|int|string $number): string
+    {
+        return $this->negative($this->floatToInt($number));
+    }
+
+    public function compareInteger(float|int|string $first, float|int|string $second): int
+    {
+        return $this->compare($this->floatToInt($first), $this->floatToInt($second));
+    }
+
+    public function ensureScale(float|int|string $number): string
+    {
+        return $this->mul($number, 1);
     }
 
     public function add(float|int|string $first, float|int|string $second, ?int $scale = null): string
     {
-        return $this->baseMathService->add(
-            $this->toInteger($first),
-            $this->toInteger($second),
-        );
+        return (string) BigDecimal::of($first)
+            ->plus(BigDecimal::of($second))
+            ->toScale($scale ?? $this->floatScale, RoundingMode::DOWN);
     }
 
     public function sub(float|int|string $first, float|int|string $second, ?int $scale = null): string
     {
-        return $this->baseMathService->sub(
-            $this->toInteger($first),
-            $this->toInteger($second)
-        );
+        return (string) BigDecimal::of($first)
+            ->minus(BigDecimal::of($second))
+            ->toScale($scale ?? $this->floatScale, RoundingMode::DOWN);
     }
 
     public function div(float|int|string $first, float|int|string $second, ?int $scale = null): string
     {
-        return $this->baseMathService->div(
-            $this->toInteger($first),
-            $this->toInteger($second),
-            $scale ?? $this->decimalPlaces
-        );
+        return (string) BigDecimal::of($first)
+            ->dividedBy(BigDecimal::of($second), $scale ?? $this->floatScale, RoundingMode::DOWN);
     }
 
     public function mul(float|int|string $first, float|int|string $second, ?int $scale = null): string
     {
-        return $this->baseMathService->mul(
-            $this->toInteger($first),
-            $this->toInteger($second)
-        );
+        return (string) BigDecimal::of($first)
+            ->multipliedBy(BigDecimal::of($second))
+            ->toScale($scale ?? $this->floatScale, RoundingMode::DOWN);
     }
 
     public function pow(float|int|string $first, float|int|string $second, ?int $scale = null): string
     {
-        return $this->baseMathService->pow(
-            $this->toInteger($first),
-            $this->toInteger($second),
-        );
+        return (string) BigDecimal::of($first)
+            ->power((int) $second)
+            ->toScale($scale ?? $this->floatScale, RoundingMode::DOWN);
     }
 
     public function powTen(float|int|string $number): string
     {
-        return $this->baseMathService->powTen($this->toInteger($number));
+        return $this->pow(10, $number);
     }
 
     public function ceil(float|int|string $number): string
     {
-        return $this->baseMathService->ceil($this->toInteger($number));
+        return (string) BigDecimal::of($number)
+            ->dividedBy(BigDecimal::one(), 0, RoundingMode::CEILING);
     }
 
     public function floor(float|int|string $number): string
     {
-        return $this->baseMathService->floor($this->toInteger($number));
+        return (string) BigDecimal::of($number)
+            ->dividedBy(BigDecimal::one(), 0, RoundingMode::FLOOR);
     }
 
     public function round(float|int|string $number, int $precision = 0): string
     {
-        return $this->baseMathService->round($this->toInteger($number), $precision);
+        return (string) BigDecimal::of($number)
+            ->dividedBy(BigDecimal::one(), $precision, RoundingMode::HALF_UP);
     }
 
     public function abs(float|int|string $number): string
     {
-        return $this->baseMathService->abs($this->toInteger($number));
+        return (string) BigDecimal::of($number)->abs()->toScale($scale ?? $this->floatScale, RoundingMode::DOWN);
     }
 
     public function negative(float|int|string $number): string
     {
-        return $this->baseMathService->negative($this->toInteger($number));
+        return (string) BigDecimal::of($number)
+            ->negated()
+            ->toScale($scale ?? $this->floatScale, RoundingMode::DOWN);
     }
 
     public function compare(float|int|string $first, float|int|string $second): int
     {
-        return $this->baseMathService->compare($this->toInteger($first), $this->toInteger($second));
+        return BigDecimal::of($first)->compareTo(BigDecimal::of($second));
     }
 }
