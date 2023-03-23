@@ -193,9 +193,13 @@ final class Math
 
     public function negative(float|int|string $number): string
     {
+        $number = BigDecimal::of($number);
+        if($number->isNegative()){
+            return (string) $number->toScale($scale ?? $this->floatScale, RoundingMode::DOWN);
+        }
         return (string) BigDecimal::of($number)
-            ->negated()
-            ->toScale($scale ?? $this->floatScale, RoundingMode::DOWN);
+            ->toScale($scale ?? $this->floatScale, RoundingMode::DOWN)
+            ->negated();
     }
 
     public function compare(float|int|string $first, float|int|string $second): int
