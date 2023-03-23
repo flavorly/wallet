@@ -100,7 +100,6 @@ final class CacheService
      * Get the lock instance but without blocking ( yet )
      *
      * @param  int|null  $lockFor
-     * @return Lock
      */
     public function lock(null|int $lockFor = null): Lock
     {
@@ -141,6 +140,7 @@ final class CacheService
 
     /**
      * Same as the block but this also wraps the callback in a database transaction
+     *
      * @throws LockTimeoutException
      * @throws WalletDatabaseTransactionException
      */
