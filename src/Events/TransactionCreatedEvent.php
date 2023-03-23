@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class TransactionDebitEvent
+class TransactionCreatedEvent
 {
     use Dispatchable;
     use SerializesModels;

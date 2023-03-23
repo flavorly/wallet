@@ -6,7 +6,11 @@ use Closure;
 use Exception;
 use Flavorly\Wallet\Concerns\EvaluatesClosures;
 use Flavorly\Wallet\Enums\TransactionType;
+use Flavorly\Wallet\Events\TransactionCreatedEvent;
+use Flavorly\Wallet\Events\TransactionCreditEvent;
+use Flavorly\Wallet\Events\TransactionDebitEvent;
 use Flavorly\Wallet\Events\TransactionFailedEvent;
+use Flavorly\Wallet\Events\TransactionFinishedEvent;
 use Flavorly\Wallet\Events\TransactionStartedEvent;
 use Flavorly\Wallet\Exceptions\InvalidOperationArgumentsException;
 use Flavorly\Wallet\Exceptions\NotEnoughBalanceException;
@@ -71,6 +75,11 @@ final class Operation
      * If balance should be refreshed after the transaction
      */
     protected bool $shouldRefreshBalance = true;
+
+    /**
+     * Stores the endpoint
+     */
+    protected ?string $endpoint = null;
 
     /**
      * How much times to retry before failing
@@ -210,6 +219,12 @@ final class Operation
         } finally {
             // Set the processing to false
             //$this->processing = false;
+            event(new TransactionFinishedEvent(
+                $this->wallet->model,
+                $this->type,
+                $this->amount,
+                $this->transaction
+            ));
         }
 
         return $this;
@@ -228,34 +243,35 @@ final class Operation
         $this->processing = true;
 
         // If the resource is locked, throw an exception instantly
-        if ($this->wallet->cache->locked()) {
+        if ($this->wallet->cache()->locked()) {
             throw new WalletLockedException(
                 sprintf(
                     'Resource is locked on Model : %s with Key: %s',
-                    $this->wallet->configuration->getClass(),
-                    $this->wallet->configuration->getPrimaryKey()
+                    $this->wallet->configuration()->getClass(),
+                    $this->wallet->configuration()->getPrimaryKey()
                 ),
             );
         }
+
         try {
             $this
                 ->wallet
-                ->cache
+                ->cache()
                 ->blockAndWrapInTransaction($callback);
         } catch (LockTimeoutException $e) {
             throw new WalletLockedException(
                 sprintf(
                     'Resource is locked on Model : %s with Key: %s',
-                    $this->wallet->configuration->getClass(),
-                    $this->wallet->configuration->getPrimaryKey()
+                    $this->wallet->configuration()->getClass(),
+                    $this->wallet->configuration()->getPrimaryKey()
                 ),
             );
         } catch (Exception $e) {
             throw new WalletLockedException(
                 sprintf(
                     'Resource is locked on Model : %s with Key: %s Additional: %s',
-                    $this->wallet->configuration->getClass(),
-                    $this->wallet->configuration->getPrimaryKey(),
+                    $this->wallet->configuration()->getClass(),
+                    $this->wallet->configuration()->getPrimaryKey(),
                     $e->getMessage(),
                 ),
             );
@@ -284,7 +300,7 @@ final class Operation
         $wantedToTransaction = $math->abs($this->amount);
         $difference = $math->sub($currentBalance, $wantedToTransaction);
         $differencePositive = $math->abs($difference);
-        $allowedCredit = $math->ensureScale($this->wallet->configuration->getMaximumCredit());
+        $allowedCredit = $math->ensureScale($this->wallet->configuration()->getMaximumCredit());
 
         if ($currentBalance < $wantedToTransaction && $differencePositive <= $allowedCredit) {
             return true;
@@ -299,8 +315,8 @@ final class Operation
     protected function getAmountForOperation(): string|float|int
     {
         return $this->type->isDebit() ?
-            $this->wallet->math->negativeInteger($this->amount) :
-            $this->wallet->math->floatToInt($this->amount);
+            $this->wallet->math()->negativeInteger($this->amount) :
+            $this->wallet->math()->floatToInt($this->amount);
     }
 
     /**
@@ -341,6 +357,7 @@ final class Operation
      */
     protected function compileDefaultCallbacks(): Operation
     {
+        // Dispatch a started event
         $this->before(callback: function (): void {
             event(new TransactionStartedEvent($this->wallet->model, $this->type, $this->amount));
         }, shift: true);
@@ -362,9 +379,23 @@ final class Operation
                 'uuid' => Str::uuid(),
                 'type' => $this->type->value(),
                 'amount' => $this->getAmountForOperation(),
-                'decimal_places' => $this->wallet->configuration->getDecimals(),
+                'decimal_places' => $this->wallet->configuration()->getDecimals(),
                 'meta' => $this->meta,
+                'endpoint' => $this->endpoint,
             ]);
+
+            // Dispatch Transaction Created Event
+            event(new TransactionCreatedEvent(
+                $this->wallet->model,
+                $this->transaction
+            ));
+
+            // Send Event Based on Type
+            match ($this->type) {
+                TransactionType::CREDIT => event(new TransactionCreditEvent($this->wallet->model, $this->transaction)),
+                TransactionType::DEBIT => event(new TransactionDebitEvent($this->wallet->model, $this->transaction)),
+                default => fn () => null
+            };
         }, shift: true);
 
         return $this;
@@ -471,6 +502,20 @@ final class Operation
     public function throw(bool|Closure $condition = true): Operation
     {
         $this->shouldThrow = $this->evaluate($condition);
+
+        return $this;
+    }
+
+    /**
+     * It's a common to figure out from where the transaction came from
+     * Example: API, Frontend, etc, so you can perform some nice stats around it
+     * or even figure from where this transaction came from
+     *
+     * @return $this
+     */
+    public function endpoint(null|string $endpoint = null): Operation
+    {
+        $this->endpoint = $endpoint;
 
         return $this;
     }

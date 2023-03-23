@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Flavorly\Wallet;
 
 use Brick\Math\BigDecimal;
+use Brick\Math\Exception\MathException;
+use Brick\Math\Exception\RoundingNecessaryException;
 use Brick\Math\RoundingMode;
 
 /**
@@ -129,6 +131,10 @@ final class Math
         return $this->mul($number, 1);
     }
 
+    /**
+     * @throws MathException
+     * @throws RoundingNecessaryException
+     */
     public function add(float|int|string $first, float|int|string $second, ?int $scale = null): string
     {
         return (string) BigDecimal::of($first)
@@ -136,6 +142,10 @@ final class Math
             ->toScale($scale ?? $this->floatScale, RoundingMode::DOWN);
     }
 
+    /**
+     * @throws MathException
+     * @throws RoundingNecessaryException
+     */
     public function sub(float|int|string $first, float|int|string $second, ?int $scale = null): string
     {
         return (string) BigDecimal::of($first)
@@ -143,12 +153,19 @@ final class Math
             ->toScale($scale ?? $this->floatScale, RoundingMode::DOWN);
     }
 
+    /**
+     * @throws MathException
+     */
     public function div(float|int|string $first, float|int|string $second, ?int $scale = null): string
     {
         return (string) BigDecimal::of($first)
             ->dividedBy(BigDecimal::of($second), $scale ?? $this->floatScale, RoundingMode::DOWN);
     }
 
+    /**
+     * @throws MathException
+     * @throws RoundingNecessaryException
+     */
     public function mul(float|int|string $first, float|int|string $second, ?int $scale = null): string
     {
         return (string) BigDecimal::of($first)
@@ -156,6 +173,10 @@ final class Math
             ->toScale($scale ?? $this->floatScale, RoundingMode::DOWN);
     }
 
+    /**
+     * @throws MathException
+     * @throws RoundingNecessaryException
+     */
     public function pow(float|int|string $first, float|int|string $second, ?int $scale = null): string
     {
         return (string) BigDecimal::of($first)
@@ -163,34 +184,55 @@ final class Math
             ->toScale($scale ?? $this->floatScale, RoundingMode::DOWN);
     }
 
+    /**
+     * @throws MathException
+     * @throws RoundingNecessaryException
+     */
     public function powTen(float|int|string $number): string
     {
         return $this->pow(10, $number);
     }
 
+    /**
+     * @throws MathException
+     */
     public function ceil(float|int|string $number): string
     {
         return (string) BigDecimal::of($number)
             ->dividedBy(BigDecimal::one(), 0, RoundingMode::CEILING);
     }
 
+    /**
+     * @throws MathException
+     */
     public function floor(float|int|string $number): string
     {
         return (string) BigDecimal::of($number)
             ->dividedBy(BigDecimal::one(), 0, RoundingMode::FLOOR);
     }
 
+    /**
+     * @throws MathException
+     */
     public function round(float|int|string $number, int $precision = 0): string
     {
         return (string) BigDecimal::of($number)
             ->dividedBy(BigDecimal::one(), $precision, RoundingMode::HALF_UP);
     }
 
+    /**
+     * @throws MathException
+     * @throws RoundingNecessaryException
+     */
     public function abs(float|int|string $number): string
     {
         return (string) BigDecimal::of($number)->abs()->toScale($scale ?? $this->floatScale, RoundingMode::DOWN);
     }
 
+    /**
+     * @throws MathException
+     * @throws RoundingNecessaryException
+     */
     public function negative(float|int|string $number): string
     {
         $number = BigDecimal::of($number);
@@ -203,6 +245,9 @@ final class Math
             ->negated();
     }
 
+    /**
+     * @throws MathException
+     */
     public function compare(float|int|string $first, float|int|string $second): int
     {
         return BigDecimal::of($first)->compareTo(BigDecimal::of($second));

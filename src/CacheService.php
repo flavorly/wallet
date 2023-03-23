@@ -6,6 +6,8 @@ use Carbon\CarbonImmutable;
 use Flavorly\Wallet\Exceptions\WalletDatabaseTransactionException;
 use Illuminate\Cache\CacheManager;
 use Illuminate\Cache\RedisStore;
+use Illuminate\Contracts\Cache\Lock;
+use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -95,6 +97,21 @@ final class CacheService
     }
 
     /**
+     * Get the lock instance but without blocking ( yet )
+     *
+     * @param  int|null  $lockFor
+     * @return Lock
+     */
+    public function lock(null|int $lockFor = null): Lock
+    {
+        return Cache::lock(
+            $this->blockPrefix(),
+            $lockFor ?? $this->ttlLock(),
+            $this->blockPrefix()
+        );
+    }
+
+    /**
      * Blocks the current wallet/model, takes a callback and executes it
      * This is the main entry point to perform safe operations without
      * worry about race condition
@@ -110,23 +127,22 @@ final class CacheService
      */
     public function block(callable $callback): mixed
     {
-        return Cache::lock(
-            $this->blockPrefix(),
-            $this->ttlLock(),
-            $this->blockPrefix()
-        )
-        ->block($this->waitForLockTime(), function () use ($callback) {
-            $this->isWithin = true;
-            try {
-                return $callback();
-            } finally {
-                $this->isWithin = false;
-            }
-        });
+        return $this
+            ->lock()
+            ->block($this->waitForLockTime(), function () use ($callback) {
+                $this->isWithin = true;
+                try {
+                    return $callback();
+                } finally {
+                    $this->isWithin = false;
+                }
+            });
     }
 
     /**
      * Same as the block but this also wraps the callback in a database transaction
+     * @throws LockTimeoutException
+     * @throws WalletDatabaseTransactionException
      */
     public function blockAndWrapInTransaction(callable $callback): mixed
     {

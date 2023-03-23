@@ -6,41 +6,52 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-   public function up()
-   {
-       Schema::create('transactions', function (Blueprint $table) {
-            $table->bigIncrements('id');
-            $table->uuid()->unique();
-            $table->morphs('transactionable');
-            $table->enum('type', ['debit', 'credit'])->index();
-            $table->decimal('amount', 64, 0);
-            $table->smallInteger('decimal_places');
-            $table->string('endpoint')->nullable();
-            $table->json('meta')->nullable();
+    public function up()
+    {
+        Schema::create('transactions', function (Blueprint $table) {
+           $table->bigIncrements('id');
+           $table->uuid()->unique();
+           $table->morphs('transactionable');
+           $table->enum('type', ['debit', 'credit'])->index();
+           $table->decimal('amount', 64, 0);
+           $table->smallInteger('decimal_places');
+           $table->string('endpoint')->nullable();
+           $table->json('meta')->nullable();
 
-            $table->timestamps();
+           $table->timestamps();
 
-            $table->index(['transactionable_type', 'transactionable_id'], 'transactionable_type_payable_id_ind');
-            $table->index(['transactionable_type', 'transactionable_id', 'type'], 'transactionable_type_ind');
-            $table->index(['transactionable_type', 'transactionable_id', 'type','endpoint'], 'transactionable_type_endpoint_ind');
-      });
-
-      Schema::table('users', function (Blueprint $table) {
-          $table->after('remember_token', function(Blueprint $table) {
-              $table->decimal('wallet_balance', 64, 0)->default(0);
-              $table->decimal('wallet_credit', 64, 0)->default(0);
-              $table->unsignedSmallInteger('wallet_decimal_places')->default(config('wallet.decimal_places'));
-              $table->string('wallet_currency')->default(config('wallet.currency'));
-          });
-      });
-   }
-
-   public function down(): void
-   {
-       Schema::dropIfExists('transactions');
-       Schema::table('users', function (Blueprint $table) {
-           $table->dropColumn('balance');
-           $table->dropColumn('decimal_places');
+           $table->index(['transactionable_type', 'transactionable_id'], 'transactionable_type_payable_id_ind');
+           $table->index(['transactionable_type', 'transactionable_id', 'type'], 'transactionable_type_ind');
+           $table->index(['transactionable_type', 'transactionable_id', 'type','endpoint'], 'transactionable_type_endpoint_ind');
        });
-   }
+
+       foreach($this->tables() as $table){
+           Schema::table($table, function (Blueprint $table) {
+               $table->after('remember_token', function(Blueprint $table) {
+                   $table->decimal('wallet_balance', 64, 0)->default(0);
+                   $table->decimal('wallet_credit', 64, 0)->default(0);
+                   $table->unsignedSmallInteger('wallet_decimal_places')->default(config('laravel-wallet.decimal_places'));
+                   $table->string('wallet_currency')->default(config('laravel-wallet.currency'));
+               });
+           });
+       }
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('transactions');
+        foreach($this->tables() as $table){
+            Schema::table($table, function (Blueprint $table) {
+                $table->dropColumn('wallet_balance');
+                $table->dropColumn('wallet_credit');
+                $table->dropColumn('wallet_decimal_places');
+                $table->dropColumn('wallet_currency');
+            });
+        }
+    }
+
+    protected function tables(): array
+    {
+        return config('laravel-wallet.tables', []);
+    }
 };

@@ -16,6 +16,7 @@ class Transaction extends Model
         'uuid',
         'type',
         'amount',
+        'endpoint',
         'meta',
         'created_at',
         'updated_at',
@@ -25,7 +26,7 @@ class Transaction extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'meta' => 'json',
+        'meta' => 'array',
     ];
 
     public function transactionable(): MorphTo

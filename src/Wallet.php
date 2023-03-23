@@ -16,19 +16,19 @@ final class Wallet
      * Stores the configuration for the wallet
      * such as decimals, currency, columns to update etc
      */
-    public ?Configuration $configuration;
+    protected ?Configuration $configuration;
 
     /**
      * Cache service is responsible for caching & locking
      */
-    public ?CacheService $cache;
+    protected ?CacheService $cache;
 
     /**
      * Math Service is responsible for making calculation
      * Under the hood it uses Brick\Math to perform arbitrary precision calculations
      * The wallet math class is different since it casts all the floats as integers
      */
-    public Math $math;
+    protected Math $math;
 
     /**
      * Bootstrap the class & resolve all necessary services
@@ -48,13 +48,14 @@ final class Wallet
      * @throws WalletLockedException
      * @throws \Throwable
      */
-    public function credit(float|int|string $amount, array $meta = [], bool $throw = false): bool
+    public function credit(float|int|string $amount, array $meta = [], null|string $endpoint = null, bool $throw = false): bool
     {
         return $this
             ->operation()
             ->meta($meta)
             ->credit($amount)
             ->throw($throw)
+            ->endpoint($endpoint)
             ->dispatch()
             ->ok();
     }
@@ -65,27 +66,17 @@ final class Wallet
      * @throws WalletLockedException
      * @throws \Throwable
      */
-    public function debit(float|int|string $amount, array $meta = [], bool $throw = false): bool
+    public function debit(float|int|string $amount, array $meta = [], null|string $endpoint = null, bool $throw = false): bool
     {
         return $this
             ->operation()
             ->meta($meta)
             ->debit($amount)
             ->throw($throw)
+            ->endpoint($endpoint)
             ->dispatch()
             ->ok();
     }
-
-//    /**
-//     * Magic method that provides a bridge to the operation class itself
-//     * @param $name
-//     * @param $arguments
-//     * @return mixed
-//     */
-//    public function __call($name, $arguments)
-//    {
-//        return (new Operation($this))->{$name}(...$arguments)->dispatch();
-//    }
 
     /**
      * Creates a new operation
@@ -133,16 +124,35 @@ final class Wallet
         $this->cache->blockAndWrapInTransaction($closure);
     }
 
+    /**
+     * Returns the cache service
+     */
     public function cache(): CacheService
     {
         return $this->cache;
     }
 
+    /**
+     * Returns the wallet math service that will ensure
+     * correct scale & precision for the given wallet or transaction
+     */
     public function math(): Math
     {
         return $this->math;
     }
 
+    /**
+     * Returns the wallet configuration
+     */
+    public function configuration(): Configuration
+    {
+        return $this->configuration;
+    }
+
+    /**
+     * Returns the current balance as a string/float representation
+     * Optional can be the cached balance or the actual balance calculated
+     */
     public function balance(bool $cached = true): string
     {
         if (! $cached) {
@@ -154,26 +164,6 @@ final class Wallet
         }
 
         return $this->math->intToFloat($this->configuration->getBalance());
-    }
-
-    /**
-     * Check if the wallet/model has enough balance for the given amount
-     *
-     * @throws \Throwable
-     */
-    public function hasBalanceFor(float|int|string $amount): bool
-    {
-        try {
-            $this
-                ->operation()
-                ->debit($amount)
-                ->pretend()
-                ->dispatch();
-
-            return true;
-        } catch (\Exception $e) {
-            return false;
-        }
     }
 
     /**
@@ -190,6 +180,24 @@ final class Wallet
         }
 
         return (int) $this->configuration->getBalance();
+    }
+
+    /**
+     * Check if the wallet/model has enough balance for the given amount
+     */
+    public function hasBalanceFor(float|int|string $amount): bool
+    {
+        try {
+            $this
+                ->operation()
+                ->debit($amount)
+                ->throw(false)
+                ->pretend()
+                ->dispatch();
+            return true;
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 
     /**

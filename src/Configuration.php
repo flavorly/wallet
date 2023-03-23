@@ -16,31 +16,49 @@ final class Configuration
     ) {
     }
 
+    /**
+     * Get the number of decimals to use for the wallet
+     */
     public function getDecimals(): int
     {
         return $this->model->getAttribute(config('laravel-wallet.columns.decimals', 'wallet_decimals')) ?? 10;
     }
 
+    /**
+     * Get the model primary key
+     */
     public function getPrimaryKey(): string
     {
         return $this->model->getKey();
     }
 
+    /**
+     * Get the Database/Model Balance Attribute
+     */
     public function getBalance(): float|int|string
     {
         return $this->model->getAttribute($this->getBalanceColumn());
     }
 
+    /**
+     * Get the maximum allowed credit ( negative ) Balance allowed for the wallet/model
+     */
     public function getMaximumCredit(): float|int|string
     {
         return $this->model->getAttribute(config('laravel-wallet.columns.credit', 'wallet_credit')) ?? 0;
     }
 
+    /**
+     * Get the column name for the balance
+     */
     public function getBalanceColumn(): string
     {
         return config('laravel-wallet.columns.balance', 'wallet_balance');
     }
 
+    /**
+     * Get the called class for the wallet
+     */
     public function getClass(): string
     {
         return $this->model::class;
