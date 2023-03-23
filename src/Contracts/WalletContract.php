@@ -2,6 +2,7 @@
 
 namespace Flavorly\Wallet\Contracts;
 
+use Brick\Money\Money;
 use Flavorly\Wallet\Wallet;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
@@ -24,4 +25,6 @@ interface WalletContract
     public function debit(float|int|string $amount, array $meta = [], null|string $endpoint = null, bool $throw = false): string;
 
     public function hasBalanceFor(float|int|string $amount): bool;
+
+    public function getBalanceAsMoneyAttribute(): Money;
 }

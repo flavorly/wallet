@@ -2,6 +2,10 @@
 
 namespace Flavorly\Wallet\Concerns;
 
+use Brick\Math\Exception\NumberFormatException;
+use Brick\Math\Exception\RoundingNecessaryException;
+use Brick\Money\Exception\UnknownCurrencyException;
+use Brick\Money\Money;
 use Flavorly\Wallet\Exceptions\WalletLockedException;
 use Flavorly\Wallet\Models\Transaction;
 use Flavorly\Wallet\Wallet;
@@ -41,6 +45,19 @@ trait HasWallet
     public function getBalanceAttribute(): string
     {
         return $this->wallet()->balance();
+    }
+
+    /**
+     * Laravel get Balance Attribute with instance of money
+     *
+     * @return Money
+     * @throws NumberFormatException
+     * @throws RoundingNecessaryException
+     * @throws UnknownCurrencyException
+     */
+    public function getBalanceAsMoneyAttribute(): Money
+    {
+        return $this->wallet()->balanceAsMoney();
     }
 
     /**

@@ -2,6 +2,10 @@
 
 namespace Flavorly\Wallet;
 
+use Brick\Math\Exception\NumberFormatException;
+use Brick\Math\Exception\RoundingNecessaryException;
+use Brick\Money\Exception\UnknownCurrencyException;
+use Brick\Money\Money;
 use Flavorly\Wallet\Contracts\WalletContract as WalletInterface;
 use Flavorly\Wallet\Exceptions\WalletLockedException;
 
@@ -164,6 +168,19 @@ final class Wallet
         }
 
         return $this->math->intToFloat($this->configuration->getBalance());
+    }
+
+    /**
+     * Return the current Balance as a Money instance
+     *
+     * @return Money
+     * @throws NumberFormatException
+     * @throws RoundingNecessaryException
+     * @throws UnknownCurrencyException
+     */
+    public function balanceAsMoney(): Money
+    {
+        return Money::of($this->balance(), $this->configuration->getCurrency());
     }
 
     /**
