@@ -6,6 +6,7 @@ use Brick\Math\Exception\NumberFormatException;
 use Brick\Math\Exception\RoundingNecessaryException;
 use Brick\Money\Exception\UnknownCurrencyException;
 use Brick\Money\Money;
+use Closure;
 use Flavorly\Wallet\Contracts\WalletContract as WalletInterface;
 use Flavorly\Wallet\Exceptions\WalletLockedException;
 
@@ -60,13 +61,14 @@ final class Wallet
      * @throws WalletLockedException
      * @throws \Throwable
      */
-    public function credit(float|int|string $amount, array $meta = [], null|string $endpoint = null, bool $throw = false): bool
+    public function credit(float|int|string $amount, array $meta = [], null|string $endpoint = null, bool $throw = false, null|Closure $after = null): bool
     {
         return $this
             ->operation()
             ->meta($meta)
             ->credit($amount)
             ->throw($throw)
+            ->after($after)
             ->endpoint($endpoint)
             ->dispatch()
             ->ok();
@@ -78,13 +80,14 @@ final class Wallet
      * @throws WalletLockedException
      * @throws \Throwable
      */
-    public function debit(float|int|string $amount, array $meta = [], null|string $endpoint = null, bool $throw = false): bool
+    public function debit(float|int|string $amount, array $meta = [], null|string $endpoint = null, bool $throw = false, null|Closure $after = null): bool
     {
         return $this
             ->operation()
             ->meta($meta)
             ->debit($amount)
             ->throw($throw)
+            ->after($after)
             ->endpoint($endpoint)
             ->dispatch()
             ->ok();
@@ -188,10 +191,9 @@ final class Wallet
             return $this->localCachedRawBalance;
         }
 
-        if ($this->cache->hasCache()) {
-            $this->localCachedRawBalance = $this->cache->balance();
-        } else {
+        if($this->configuration->getBalance()){
             $this->localCachedRawBalance = $this->configuration->getBalance();
+            $this->cache()->put($this->localCachedRawBalance);
         }
 
         return (int) $this->localCachedRawBalance;

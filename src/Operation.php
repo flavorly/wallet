@@ -407,8 +407,12 @@ final class Operation
      *
      * @return $this
      */
-    public function before(callable $callback, bool $shift = false): Operation
+    public function before(null|callable $callback, bool $shift = false): Operation
     {
+        if(!$callback){
+            return $this;
+        }
+
         $shift ? array_unshift($this->beforeCallbacks, $callback) : $this->beforeCallbacks[] = $callback;
 
         return $this;
@@ -420,8 +424,12 @@ final class Operation
      *
      * @return $this
      */
-    public function after(callable $callback, bool $shift = false): Operation
+    public function after(null|callable $callback, bool $shift = false): Operation
     {
+        if(!$callback){
+            return $this;
+        }
+
         $shift ? array_unshift($this->afterCallbacks, $callback) : $this->afterCallbacks[] = $callback;
 
         return $this;
@@ -435,8 +443,12 @@ final class Operation
      *
      * @return $this
      */
-    protected function callback(callable $callback, bool $shift = false): Operation
+    protected function callback(null|callable $callback, bool $shift = false): Operation
     {
+        if(!$callback){
+            return $this;
+        }
+
         $shift ? array_unshift($this->callbacks, $callback) : $this->callbacks[] = $callback;
 
         return $this;
