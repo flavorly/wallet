@@ -39,8 +39,6 @@ final class Wallet
      * This is used to avoid multiple queries to the database or cache hits
      * when dealing with the same wallet multiple times in the same request or
      * for a given process lifecycle
-     *
-     * @var int|string|null
      */
     protected int|string|null $localCachedRawBalance = null;
 
@@ -186,15 +184,16 @@ final class Wallet
         }
 
         // If we have a local cached balance, return it
-        if(null !== $this->localCachedRawBalance){
+        if (null !== $this->localCachedRawBalance) {
             return $this->localCachedRawBalance;
         }
 
         if ($this->cache->hasCache()) {
             $this->localCachedRawBalance = $this->cache->balance();
-        }else{
+        } else {
             $this->localCachedRawBalance = $this->configuration->getBalance();
         }
+
         return (int) $this->localCachedRawBalance;
     }
 
