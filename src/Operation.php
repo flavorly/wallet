@@ -409,7 +409,7 @@ final class Operation
      */
     public function before(null|callable $callback, bool $shift = false): Operation
     {
-        if(!$callback){
+        if (! $callback) {
             return $this;
         }
 
@@ -426,7 +426,7 @@ final class Operation
      */
     public function after(null|callable $callback, bool $shift = false): Operation
     {
-        if(!$callback){
+        if (! $callback) {
             return $this;
         }
 
@@ -445,7 +445,7 @@ final class Operation
      */
     protected function callback(null|callable $callback, bool $shift = false): Operation
     {
-        if(!$callback){
+        if (! $callback) {
             return $this;
         }
 

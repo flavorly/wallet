@@ -191,7 +191,7 @@ final class Wallet
             return $this->localCachedRawBalance;
         }
 
-        if($this->configuration->getBalance()){
+        if ($this->configuration->getBalance()) {
             $this->localCachedRawBalance = $this->configuration->getBalance();
             $this->cache()->put($this->localCachedRawBalance);
         }
