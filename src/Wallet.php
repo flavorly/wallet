@@ -35,6 +35,16 @@ final class Wallet
     protected Math $math;
 
     /**
+     * Temporary cache for the balance as a static variable
+     * This is used to avoid multiple queries to the database or cache hits
+     * when dealing with the same wallet multiple times in the same request or
+     * for a given process lifecycle
+     *
+     * @var int|string|null
+     */
+    protected int|string|null $localCachedRawBalance = null;
+
+    /**
      * Bootstrap the class & resolve all necessary services
      * We take the current Eloquent model as a parameter
      * that should implement the WalletContract
@@ -114,9 +124,13 @@ final class Wallet
             $this->cache->put($balance);
 
             // Update the balance on database
-            $this->model->update([
+            // Quietly as we dont need more events on this one.
+            $this->model->updateQuietly([
                 $this->configuration->getBalanceColumn() => $balance,
             ]);
+
+            // Update the local variable just in case we need to re-use it
+            $this->localCachedRawBalance = $balance;
         };
 
         if ($this->cache->isWithin()) {
@@ -159,15 +173,29 @@ final class Wallet
      */
     public function balance(bool $cached = true): string
     {
+        return $this->math()->intToFloat($this->balanceRaw($cached));
+    }
+
+    /**
+     * Returns the balance without any formatting or casting
+     */
+    public function balanceRaw(bool $cached = true): int
+    {
         if (! $cached) {
             $this->refreshBalance();
         }
 
-        if ($this->cache->hasCache() && $this->configuration->getBalance() === $this->cache->balance()) {
-            return $this->math->intToFloat($this->cache->balance());
+        // If we have a local cached balance, return it
+        if(null !== $this->localCachedRawBalance){
+            return $this->localCachedRawBalance;
         }
 
-        return $this->math->intToFloat($this->configuration->getBalance());
+        if ($this->cache->hasCache()) {
+            $this->localCachedRawBalance = $this->cache->balance();
+        }else{
+            $this->localCachedRawBalance = $this->configuration->getBalance();
+        }
+        return (int) $this->localCachedRawBalance;
     }
 
     /**
@@ -181,22 +209,6 @@ final class Wallet
     public function balanceAsMoney(): Money
     {
         return Money::of($this->balance(), $this->configuration->getCurrency());
-    }
-
-    /**
-     * Returns the balance without any formatting or casting
-     */
-    public function balanceRaw(bool $cached = true): int
-    {
-        if (! $cached) {
-            $this->refreshBalance();
-        }
-
-        if ($this->cache->hasCache() && $this->configuration->getBalance() === $this->cache->balance()) {
-            return (int) $this->cache->balance();
-        }
-
-        return (int) $this->configuration->getBalance();
     }
 
     /**

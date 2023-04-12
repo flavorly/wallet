@@ -69,8 +69,11 @@ trait HasWallet
     /**
      * Alias for Credit
      *
+     * @param  float|int|string  $amount
+     * @param  array  $meta
      * @param  string|null  $endpoint
-     *
+     * @param  bool  $throw
+     * @return string
      * @throws WalletLockedException
      * @throws \Throwable
      */
@@ -87,8 +90,11 @@ trait HasWallet
     /**
      * Alias for debit
      *
+     * @param  float|int|string  $amount
+     * @param  array  $meta
      * @param  string|null  $endpoint
-     *
+     * @param  bool  $throw
+     * @return string
      * @throws WalletLockedException
      * @throws \Throwable
      */
