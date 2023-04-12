@@ -3,7 +3,6 @@
 namespace Flavorly\Wallet;
 
 use Brick\Money\Currency;
-use Brick\Money\Money;
 use Flavorly\Wallet\Contracts\WalletContract;
 
 /**
@@ -57,7 +56,6 @@ final class Configuration
     {
         return $this->model->getAttribute(config('laravel-wallet.columns.currency', 'wallet_currency')) ?? config('laravel-wallet.currency', 'USD');
     }
-
 
     /**
      * Get the column name for the balance
