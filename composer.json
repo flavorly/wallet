@@ -26,8 +26,8 @@
     "require-dev": {
         "larastan/larastan": "^v2.9.6",
         "laravel/pint": "^1.15",
-        "nunomaduro/collision": "^7.10",
-        "orchestra/testbench": "^8.22",
+        "nunomaduro/collision": "^v8.1.1",
+        "orchestra/testbench": "^9.1.0",
         "pestphp/pest": "^2.34",
         "pestphp/pest-plugin-arch": "^2.7",
         "pestphp/pest-plugin-laravel": "^2.4",
