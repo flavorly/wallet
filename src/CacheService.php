@@ -90,12 +90,13 @@ final class CacheService
 
     /**
      * Get the current Balance in cache
+     *
      * @throws WalletDatabaseTransactionException
      */
     public function balance(): float|int|string
     {
-        $balance =  Cache::tags($this->tags())->get($this->prefix());
-        if(is_string($balance) || is_int($balance) || is_float($balance)) {
+        $balance = Cache::tags($this->tags())->get($this->prefix());
+        if (is_string($balance) || is_int($balance) || is_float($balance)) {
             return $balance;
         }
         throw new WalletDatabaseTransactionException('Invalid balance type');
@@ -103,11 +104,8 @@ final class CacheService
 
     /**
      * Get the lock instance but without blocking ( yet )
-     *
-     * @param  int|null  $lockFor
-     * @return Lock
      */
-    public function lock(null|int $lockFor = null): Lock
+    public function lock(?int $lockFor = null): Lock
     {
         return Cache::lock(
             $this->blockPrefix(),
@@ -183,7 +181,7 @@ final class CacheService
         /** @var CacheManager $lockConnection */
         $lockConnection = $store->lockConnection();
 
-        return null !== $lockConnection->get(Cache::getPrefix().$this->blockPrefix());
+        return $lockConnection->get(Cache::getPrefix().$this->blockPrefix()) !== null;
     }
 
     /**

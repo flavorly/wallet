@@ -60,16 +60,12 @@ final class Wallet
     /**
      * API Wrapper for the operation class to credit the wallet
      *
-     * @param  float|int|string  $amount
      * @param  array<string,mixed>  $meta
-     * @param  string|null  $endpoint
-     * @param  bool  $throw
-     * @param  Closure|null  $after
-     * @return bool
+     *
      * @throws WalletLockedException
      * @throws Throwable
      */
-    public function credit(float|int|string $amount, array $meta = [], null|string $endpoint = null, bool $throw = false, null|Closure $after = null): bool
+    public function credit(float|int|string $amount, array $meta = [], ?string $endpoint = null, bool $throw = false, ?Closure $after = null): bool
     {
         return $this
             ->operation(TransactionType::CREDIT)
@@ -81,19 +77,16 @@ final class Wallet
             ->dispatch()
             ->ok();
     }
+
     /**
      * API Wrapper for the operation class to debit the wallet
      *
-     * @param  float|int|string  $amount
      * @param  array<string,mixed>  $meta
-     * @param  string|null  $endpoint
-     * @param  bool  $throw
-     * @param  Closure|null  $after
-     * @return bool
+     *
      * @throws WalletLockedException
      * @throws Throwable
      */
-    public function debit(float|int|string $amount, array $meta = [], null|string $endpoint = null, bool $throw = false, null|Closure $after = null): bool
+    public function debit(float|int|string $amount, array $meta = [], ?string $endpoint = null, bool $throw = false, ?Closure $after = null): bool
     {
         return $this
             ->operation(TransactionType::DEBIT)
@@ -149,6 +142,7 @@ final class Wallet
 
         if ($this->cache->isWithin()) {
             $closure();
+
             return;
         }
 
@@ -200,7 +194,7 @@ final class Wallet
         }
 
         // If we have a local cached balance, return it
-        if (null !== $this->localCachedRawBalance) {
+        if ($this->localCachedRawBalance !== null) {
             return $this->localCachedRawBalance;
         }
 

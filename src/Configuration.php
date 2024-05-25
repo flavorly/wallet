@@ -25,11 +25,11 @@ final readonly class Configuration
     {
         //@phpstan-ignore-next-line
         $decimals = $this->model->getAttribute(config('laravel-wallet.columns.decimals', 'wallet_decimals')) ?? 10;
-        if(is_string($decimals)) {
+        if (is_string($decimals)) {
             return (int) $decimals;
         }
 
-        if(is_int($decimals) || is_float($decimals)) {
+        if (is_int($decimals) || is_float($decimals)) {
             return (int) $decimals;
         }
 
@@ -41,9 +41,10 @@ final readonly class Configuration
      */
     public function getPrimaryKey(): string
     {
-        if(!is_string($this->model->getKey()) && !is_int($this->model->getKey())) {
+        if (! is_string($this->model->getKey()) && ! is_int($this->model->getKey())) {
             throw new InvalidArgumentException('Primary key must be a string or an integer');
         }
+
         return (string) $this->model->getKey();
     }
 

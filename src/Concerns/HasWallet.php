@@ -68,12 +68,11 @@ trait HasWallet
     /**
      * Alias for Credit
      *
-     * @param  string|null  $endpoint
      *
      * @throws WalletLockedException
      * @throws \Throwable
      */
-    public function credit(float|int|string $amount, array $meta = [], null|string $endpoint = null, bool $throw = false): string
+    public function credit(float|int|string $amount, array $meta = [], ?string $endpoint = null, bool $throw = false): string
     {
         return $this->wallet()->credit(
             amount: $amount,
@@ -86,12 +85,11 @@ trait HasWallet
     /**
      * Alias for debit
      *
-     * @param  string|null  $endpoint
      *
      * @throws WalletLockedException
      * @throws \Throwable
      */
-    public function debit(float|int|string $amount, array $meta = [], null|string $endpoint = null, bool $throw = false): string
+    public function debit(float|int|string $amount, array $meta = [], ?string $endpoint = null, bool $throw = false): string
     {
         return $this->wallet()->debit(
             amount: $amount,

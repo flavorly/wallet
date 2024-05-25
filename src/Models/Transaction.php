@@ -27,7 +27,6 @@ class Transaction extends Model
         return $this->morphTo();
     }
 
-
     /**
      * Get the attributes that should be cast.
      *
@@ -39,5 +38,4 @@ class Transaction extends Model
             'meta' => 'array',
         ];
     }
-
 }

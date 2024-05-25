@@ -58,7 +58,8 @@ final class Operation
 
     /**
      * Additional Meta information to store along the transaction
-     * @var array<string,mixed> $meta
+     *
+     * @var array<string,mixed>
      */
     protected array $meta = [];
 
@@ -118,7 +119,7 @@ final class Operation
      */
     public function ok(): bool
     {
-        return null !== $this->transaction;
+        return $this->transaction !== null;
     }
 
     /**
@@ -404,7 +405,7 @@ final class Operation
      *
      * @return $this
      */
-    public function before(null|callable $callback, bool $shift = false): Operation
+    public function before(?callable $callback, bool $shift = false): Operation
     {
         if (! $callback) {
             return $this;
@@ -421,7 +422,7 @@ final class Operation
      *
      * @return $this
      */
-    public function after(null|callable $callback, bool $shift = false): Operation
+    public function after(?callable $callback, bool $shift = false): Operation
     {
         if (! $callback) {
             return $this;
@@ -440,7 +441,7 @@ final class Operation
      *
      * @return $this
      */
-    protected function callback(null|callable $callback, bool $shift = false): Operation
+    protected function callback(?callable $callback, bool $shift = false): Operation
     {
         if (! $callback) {
             return $this;
@@ -522,7 +523,7 @@ final class Operation
      *
      * @return $this
      */
-    public function endpoint(null|string $endpoint = null): Operation
+    public function endpoint(?string $endpoint = null): Operation
     {
         $this->endpoint = $endpoint;
 
@@ -544,7 +545,7 @@ final class Operation
     /**
      * Appends additional metadata to the transaction
      *
-     * @param array<string,mixed> $meta
+     * @param  array<string,mixed>  $meta
      * @return $this
      */
     public function meta(array $meta): Operation
