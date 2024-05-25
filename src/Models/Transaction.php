@@ -7,9 +7,6 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Transaction extends Model
 {
-    /**
-     * @var string[]
-     */
     protected $fillable = [
         'transactionable_type',
         'transactionable_id',
@@ -23,14 +20,24 @@ class Transaction extends Model
     ];
 
     /**
-     * @var array<string, string>
+     * @return MorphTo<Model, Transaction>
      */
-    protected $casts = [
-        'meta' => 'array',
-    ];
-
     public function transactionable(): MorphTo
     {
         return $this->morphTo();
     }
+
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'meta' => 'array',
+        ];
+    }
+
 }

@@ -48,7 +48,7 @@ final class Operation
     /**
      * The type of transaction debit/credit
      */
-    protected ?TransactionType $type = null;
+    protected TransactionType $type;
 
     /**
      * Store the amount of teh transaction
@@ -58,6 +58,7 @@ final class Operation
 
     /**
      * Additional Meta information to store along the transaction
+     * @var array<string,mixed> $meta
      */
     protected array $meta = [];
 
@@ -106,9 +107,10 @@ final class Operation
      */
     protected ?Transaction $transaction = null;
 
-    public function __construct(Wallet $service)
+    public function __construct(Wallet $service, TransactionType $type)
     {
         $this->wallet = $service;
+        $this->type = $type;
     }
 
     /**
@@ -159,10 +161,6 @@ final class Operation
 
         if ((int) $this->amount === 0) {
             throw new InvalidOperationArgumentsException('Amount cannot be zero');
-        }
-
-        if ($this->type === null) {
-            throw new InvalidOperationArgumentsException('Transaction type must be set');
         }
 
         if (! $this->hasEnoughBalanceOperation()) {
@@ -394,7 +392,6 @@ final class Operation
             match ($this->type) {
                 TransactionType::CREDIT => event(new TransactionCreditEvent($this->wallet->model, $this->transaction)),
                 TransactionType::DEBIT => event(new TransactionDebitEvent($this->wallet->model, $this->transaction)),
-                default => fn () => null
             };
         }, shift: true);
 
@@ -489,7 +486,7 @@ final class Operation
      */
     public function if(bool|Closure $condition): Operation
     {
-        $this->shouldContinue = $this->evaluate($condition);
+        $this->shouldContinue = (bool) $this->evaluate($condition);
 
         return $this;
     }
@@ -513,7 +510,7 @@ final class Operation
      */
     public function throw(bool|Closure $condition = true): Operation
     {
-        $this->shouldThrow = $this->evaluate($condition);
+        $this->shouldThrow = (bool) $this->evaluate($condition);
 
         return $this;
     }
@@ -539,7 +536,7 @@ final class Operation
      */
     public function dontThrow(bool|Closure $condition = false): Operation
     {
-        $this->shouldThrow = $this->evaluate($condition);
+        $this->shouldThrow = (bool) $this->evaluate($condition);
 
         return $this;
     }
@@ -547,6 +544,7 @@ final class Operation
     /**
      * Appends additional metadata to the transaction
      *
+     * @param array<string,mixed> $meta
      * @return $this
      */
     public function meta(array $meta): Operation
