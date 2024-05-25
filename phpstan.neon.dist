@@ -1,14 +1,17 @@
 includes:
-    - phpstan-baseline.neon
-
+    - vendor/larastan/larastan/extension.neon
 parameters:
-    level: 4
+    editorUrl: 'phpstorm://open?file=%%file%%&line=%%line%%'
     paths:
-        - src
-        - config
-        - database
-    tmpDir: build/phpstan
+        - src/
+    # Level 9 is the highest level
+    level: 9
+    ignoreErrors:
+    scanFiles:
+    excludePaths:
+        - tests/*/Feature/*
+        - tests/*/Unit/*
+        - tests/*/Datasets/*
     checkOctaneCompatibility: true
     checkModelProperties: true
-    checkMissingIterableValueType: false
-
+    treatPhpDocTypesAsCertain: false
