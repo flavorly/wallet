@@ -8,8 +8,10 @@ trait EvaluatesClosures
 {
     /**
      * Stolen from Filament, evaluate the closure with given params, and exclude some.
+     *
+     * @param  array<string,mixed>  $parameters
      */
-    protected function evaluate($value, array $parameters = []): mixed
+    protected function evaluate(mixed $value, array $parameters = []): mixed
     {
         if ($value instanceof Closure) {
             return app()->call(

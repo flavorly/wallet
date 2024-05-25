@@ -4,16 +4,17 @@ namespace Flavorly\Wallet;
 
 use Brick\Money\Currency;
 use Flavorly\Wallet\Contracts\WalletContract;
+use InvalidArgumentException;
 
 /**
  * Ensures the configuration is bootstrapped and available to the wallet.
  * We pass the current model to the configuration class
  * So we can grab an additional configuration from the model
  */
-final class Configuration
+final readonly class Configuration
 {
     public function __construct(
-        private readonly WalletContract $model,
+        private WalletContract $model,
     ) {
     }
 
@@ -22,7 +23,17 @@ final class Configuration
      */
     public function getDecimals(): int
     {
-        return $this->model->getAttribute(config('laravel-wallet.columns.decimals', 'wallet_decimals')) ?? 10;
+        //@phpstan-ignore-next-line
+        $decimals = $this->model->getAttribute(config('laravel-wallet.columns.decimals', 'wallet_decimals')) ?? 10;
+        if (is_string($decimals)) {
+            return (int) $decimals;
+        }
+
+        if (is_int($decimals) || is_float($decimals)) {
+            return (int) $decimals;
+        }
+
+        return 10;
     }
 
     /**
@@ -30,13 +41,17 @@ final class Configuration
      */
     public function getPrimaryKey(): string
     {
-        return $this->model->getKey();
+        if (! is_string($this->model->getKey()) && ! is_int($this->model->getKey())) {
+            throw new InvalidArgumentException('Primary key must be a string or an integer');
+        }
+
+        return (string) $this->model->getKey();
     }
 
     /**
      * Get the Database/Model Balance Attribute
      */
-    public function getBalance(): float|int|string
+    public function getBalance(): mixed
     {
         return $this->model->getAttribute($this->getBalanceColumn());
     }
@@ -46,6 +61,7 @@ final class Configuration
      */
     public function getMaximumCredit(): float|int|string
     {
+        //@phpstan-ignore-next-line
         return $this->model->getAttribute(config('laravel-wallet.columns.credit', 'wallet_credit')) ?? 0;
     }
 
@@ -54,6 +70,7 @@ final class Configuration
      */
     public function getCurrency(): string
     {
+        //@phpstan-ignore-next-line
         return $this->model->getAttribute(config('laravel-wallet.columns.currency', 'wallet_currency')) ?? config('laravel-wallet.currency', 'USD');
     }
 
@@ -62,6 +79,7 @@ final class Configuration
      */
     public function getBalanceColumn(): string
     {
+        //@phpstan-ignore-next-line
         return config('laravel-wallet.columns.balance', 'wallet_balance');
     }
 

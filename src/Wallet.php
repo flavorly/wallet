@@ -8,7 +8,9 @@ use Brick\Money\Exception\UnknownCurrencyException;
 use Brick\Money\Money;
 use Closure;
 use Flavorly\Wallet\Contracts\WalletContract as WalletInterface;
+use Flavorly\Wallet\Enums\TransactionType;
 use Flavorly\Wallet\Exceptions\WalletLockedException;
+use Throwable;
 
 /**
  * A plain and simple wallet API for Laravel & Eloquent Model
@@ -21,12 +23,12 @@ final class Wallet
      * Stores the configuration for the wallet
      * such as decimals, currency, columns to update etc
      */
-    protected ?Configuration $configuration;
+    protected Configuration $configuration;
 
     /**
      * Cache service is responsible for caching & locking
      */
-    protected ?CacheService $cache;
+    protected CacheService $cache;
 
     /**
      * Math Service is responsible for making calculation
@@ -41,7 +43,7 @@ final class Wallet
      * when dealing with the same wallet multiple times in the same request or
      * for a given process lifecycle
      */
-    protected int|string|null $localCachedRawBalance = null;
+    protected mixed $localCachedRawBalance = null;
 
     /**
      * Bootstrap the class & resolve all necessary services
@@ -58,13 +60,15 @@ final class Wallet
     /**
      * API Wrapper for the operation class to credit the wallet
      *
+     * @param  array<string,mixed>  $meta
+     *
      * @throws WalletLockedException
-     * @throws \Throwable
+     * @throws Throwable
      */
-    public function credit(float|int|string $amount, array $meta = [], null|string $endpoint = null, bool $throw = false, null|Closure $after = null): bool
+    public function credit(float|int|string $amount, array $meta = [], ?string $endpoint = null, bool $throw = false, ?Closure $after = null): bool
     {
         return $this
-            ->operation()
+            ->operation(TransactionType::CREDIT)
             ->meta($meta)
             ->credit($amount)
             ->throw($throw)
@@ -75,15 +79,17 @@ final class Wallet
     }
 
     /**
-     *  API Wrapper for the operation class to debig the wallet
+     * API Wrapper for the operation class to debit the wallet
+     *
+     * @param  array<string,mixed>  $meta
      *
      * @throws WalletLockedException
-     * @throws \Throwable
+     * @throws Throwable
      */
-    public function debit(float|int|string $amount, array $meta = [], null|string $endpoint = null, bool $throw = false, null|Closure $after = null): bool
+    public function debit(float|int|string $amount, array $meta = [], ?string $endpoint = null, bool $throw = false, ?Closure $after = null): bool
     {
         return $this
-            ->operation()
+            ->operation(TransactionType::DEBIT)
             ->meta($meta)
             ->debit($amount)
             ->throw($throw)
@@ -98,9 +104,9 @@ final class Wallet
      * This is the main entry point to create transaction
      * Wallet class is just an API for the actual underlying operation object
      */
-    public function operation(): Operation
+    public function operation(TransactionType $type): Operation
     {
-        return new Operation($this);
+        return new Operation($this, $type);
     }
 
     /**
@@ -174,20 +180,21 @@ final class Wallet
      */
     public function balance(bool $cached = true): string
     {
+        // @phpstan-ignore-next-line
         return $this->math()->intToFloat($this->balanceRaw($cached));
     }
 
     /**
      * Returns the balance without any formatting or casting
      */
-    public function balanceRaw(bool $cached = true): int
+    public function balanceRaw(bool $cached = true): mixed
     {
         if (! $cached) {
             $this->refreshBalance();
         }
 
         // If we have a local cached balance, return it
-        if (null !== $this->localCachedRawBalance) {
+        if ($this->localCachedRawBalance !== null) {
             return $this->localCachedRawBalance;
         }
 
@@ -196,7 +203,7 @@ final class Wallet
             $this->cache()->put($this->localCachedRawBalance);
         }
 
-        return (int) $this->localCachedRawBalance;
+        return $this->localCachedRawBalance;
     }
 
     /**
@@ -218,7 +225,7 @@ final class Wallet
     {
         try {
             $this
-                ->operation()
+                ->operation(TransactionType::DEBIT)
                 ->debit($amount)
                 ->throw(false)
                 ->pretend()

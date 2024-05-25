@@ -16,11 +16,11 @@ use Brick\Math\RoundingMode;
  * Please see Brick\Money for more information about the concept
  * on why we use Integers instead of floats
  */
-final class Math
+final readonly class Math
 {
     public function __construct(
-        protected readonly int $floatScale,
-        protected readonly int $integerScale = 20,
+        protected int $floatScale,
+        protected int $integerScale = 20,
     ) {
     }
 
@@ -224,7 +224,7 @@ final class Math
      * @throws MathException
      * @throws RoundingNecessaryException
      */
-    public function abs(float|int|string $number): string
+    public function abs(float|int|string $number, ?int $scale = null): string
     {
         return (string) BigDecimal::of($number)->abs()->toScale($scale ?? $this->floatScale, RoundingMode::DOWN);
     }
@@ -233,7 +233,7 @@ final class Math
      * @throws MathException
      * @throws RoundingNecessaryException
      */
-    public function negative(float|int|string $number): string
+    public function negative(float|int|string $number, ?int $scale = null): string
     {
         $number = BigDecimal::of($number);
         if ($number->isNegative()) {
