@@ -203,7 +203,7 @@ final class Wallet
             $this->cache()->put($this->localCachedRawBalance);
         }
 
-        return $this->localCachedRawBalance;
+        return $this->localCachedRawBalance ?? '0';
     }
 
     /**
