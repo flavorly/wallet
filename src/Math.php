@@ -258,14 +258,11 @@ final readonly class Math
     /**
      * Check if its zero
      *
-     * @param  float|int|string  $number
-     * @param  int|null  $scale
-     * @return bool
      * @throws DivisionByZeroException
      * @throws NumberFormatException
      * @throws RoundingNecessaryException
      */
-    public function isZero(float|int|string $number,  ?int $scale = null): bool
+    public function isZero(float|int|string $number, ?int $scale = null): bool
     {
         return BigDecimal::of($number)
             ->toScale($scale ?? $this->floatScale, RoundingMode::DOWN)
@@ -273,28 +270,23 @@ final readonly class Math
     }
 
     /**
-     * @param  float|int|string  $number
-     * @param  int|null  $scale
-     * @return bool
      * @throws DivisionByZeroException
      * @throws NumberFormatException
      * @throws RoundingNecessaryException
      */
-    public function isNotZero(float|int|string $number,  ?int $scale = null): bool
+    public function isNotZero(float|int|string $number, ?int $scale = null): bool
     {
         return ! $this->isZero($number, $scale);
     }
 
     /**
      * Returns the representation of the number as a string
-     * @param  float|int|string  $number
-     * @param  int|null  $scale
-     * @return BigDecimal
+     *
      * @throws DivisionByZeroException
      * @throws NumberFormatException
      * @throws RoundingNecessaryException
      */
-    public function toToNumber(float|int|string $number,  ?int $scale = null): BigDecimal
+    public function toToNumber(float|int|string $number, ?int $scale = null): BigDecimal
     {
         return BigDecimal::of($number)
             ->toScale($scale ?? $this->floatScale, RoundingMode::DOWN);
@@ -303,10 +295,6 @@ final readonly class Math
     /**
      * Check if two numbers are equal
      *
-     * @param  float|int|string  $first
-     * @param  float|int|string  $second
-     * @param  int|null  $scale
-     * @return bool
      * @throws DivisionByZeroException
      * @throws NumberFormatException
      * @throws RoundingNecessaryException

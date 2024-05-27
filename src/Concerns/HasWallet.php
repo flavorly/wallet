@@ -85,14 +85,10 @@ trait HasWallet
 
     /**
      * Credit the user quietly without exceptions
-     * @param  float|int|string  $amount
-     * @param  array  $meta
-     * @param  string|null  $endpoint
-     * @return bool
      */
     public function creditQuietly(float|int|string $amount, array $meta = [], ?string $endpoint = null): bool
     {
-        try{
+        try {
             return $this->wallet()->credit(
                 amount: $amount,
                 meta: $meta,
@@ -123,15 +119,10 @@ trait HasWallet
 
     /**
      * Attempts to Debit the user quietly without exceptions
-     *
-     * @param  float|int|string  $amount
-     * @param  array  $meta
-     * @param  string|null  $endpoint
-     * @return bool
      */
     public function debitQuietly(float|int|string $amount, array $meta = [], ?string $endpoint = null): bool
     {
-        try{
+        try {
             return $this->wallet()->debit(
                 amount: $amount,
                 meta: $meta,
