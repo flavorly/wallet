@@ -2,6 +2,10 @@
 
 All notable changes to `wallet` will be documented in this file.
 
+## v0.0.6-alpha - 2024-05-27
+
+Fixed issue rounding floats with balanceAsMoney method
+
 ## v0.0.5-alpha - 2024-05-27
 
 feat: Added isZero, isNotZero, isSame, toNumber to allow better testing and more complex operations
