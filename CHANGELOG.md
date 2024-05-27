@@ -2,6 +2,10 @@
 
 All notable changes to `wallet` will be documented in this file.
 
+## v0.0.7-alpha - 2024-05-27
+
+Better exception handling when checking for balance
+
 ## v0.0.6-alpha - 2024-05-27
 
 Fixed issue rounding floats with balanceAsMoney method
