@@ -4,6 +4,7 @@ namespace Flavorly\Wallet;
 
 use Brick\Math\Exception\NumberFormatException;
 use Brick\Math\Exception\RoundingNecessaryException;
+use Brick\Money\Context\AutoContext;
 use Brick\Money\Exception\UnknownCurrencyException;
 use Brick\Money\Money;
 use Closure;
@@ -215,7 +216,11 @@ final class Wallet
      */
     public function balanceAsMoney(): Money
     {
-        return Money::of($this->balance(), $this->configuration->getCurrency());
+        return Money::of(
+            $this->balance(),
+            $this->configuration->getCurrency(),
+            new AutoContext(),
+        );
     }
 
     /**
@@ -234,6 +239,7 @@ final class Wallet
             return true;
         } catch (\Exception $e) {
             report($e);
+
             return false;
         }
     }
