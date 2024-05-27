@@ -242,6 +242,7 @@ final class Wallet
             return false;
         } catch (Throwable $e) {
             report($e);
+
             return false;
         }
     }
