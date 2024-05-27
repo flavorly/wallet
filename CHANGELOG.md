@@ -2,6 +2,11 @@
 
 All notable changes to `wallet` will be documented in this file.
 
+## v0.0.5-alpha - 2024-05-27
+
+feat: Added isZero, isNotZero, isSame, toNumber to allow better testing and more complex operations
+feat: added debitQuietly
+
 ## Bugfixes - 2024-05-26
 
 fix: issue where balanceRaw would return null
