@@ -10,6 +10,7 @@ use Brick\Money\Money;
 use Closure;
 use Flavorly\Wallet\Contracts\WalletContract as WalletInterface;
 use Flavorly\Wallet\Enums\TransactionType;
+use Flavorly\Wallet\Exceptions\NotEnoughBalanceException;
 use Flavorly\Wallet\Exceptions\WalletLockedException;
 use Throwable;
 
@@ -237,9 +238,10 @@ final class Wallet
                 ->dispatch();
 
             return true;
-        } catch (\Exception $e) {
+        } catch (NotEnoughBalanceException $e) {
+            return false;
+        } catch (Throwable $e) {
             report($e);
-
             return false;
         }
     }
