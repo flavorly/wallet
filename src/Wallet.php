@@ -233,6 +233,7 @@ final class Wallet
 
             return true;
         } catch (\Exception $e) {
+            report($e);
             return false;
         }
     }
