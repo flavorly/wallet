@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Flavorly\Wallet;
 
 use Brick\Math\BigDecimal;
+use Brick\Math\Exception\DivisionByZeroException;
 use Brick\Math\Exception\MathException;
+use Brick\Math\Exception\NumberFormatException;
 use Brick\Math\Exception\RoundingNecessaryException;
 use Brick\Math\RoundingMode;
 
@@ -251,5 +253,72 @@ final readonly class Math
     public function compare(float|int|string $first, float|int|string $second): int
     {
         return BigDecimal::of($first)->compareTo(BigDecimal::of($second));
+    }
+
+    /**
+     * Check if its zero
+     *
+     * @param  float|int|string  $number
+     * @param  int|null  $scale
+     * @return bool
+     * @throws DivisionByZeroException
+     * @throws NumberFormatException
+     * @throws RoundingNecessaryException
+     */
+    public function isZero(float|int|string $number,  ?int $scale = null): bool
+    {
+        return BigDecimal::of($number)
+            ->toScale($scale ?? $this->floatScale, RoundingMode::DOWN)
+            ->isZero();
+    }
+
+    /**
+     * @param  float|int|string  $number
+     * @param  int|null  $scale
+     * @return bool
+     * @throws DivisionByZeroException
+     * @throws NumberFormatException
+     * @throws RoundingNecessaryException
+     */
+    public function isNotZero(float|int|string $number,  ?int $scale = null): bool
+    {
+        return ! $this->isZero($number, $scale);
+    }
+
+    /**
+     * Returns the representation of the number as a string
+     * @param  float|int|string  $number
+     * @param  int|null  $scale
+     * @return BigDecimal
+     * @throws DivisionByZeroException
+     * @throws NumberFormatException
+     * @throws RoundingNecessaryException
+     */
+    public function toToNumber(float|int|string $number,  ?int $scale = null): BigDecimal
+    {
+        return BigDecimal::of($number)
+            ->toScale($scale ?? $this->floatScale, RoundingMode::DOWN);
+    }
+
+    /**
+     * Check if two numbers are equal
+     *
+     * @param  float|int|string  $first
+     * @param  float|int|string  $second
+     * @param  int|null  $scale
+     * @return bool
+     * @throws DivisionByZeroException
+     * @throws NumberFormatException
+     * @throws RoundingNecessaryException
+     */
+    public function isEqual(float|int|string $first, float|int|string $second, ?int $scale = null): bool
+    {
+        $firstScaled = BigDecimal::of($first)
+            ->toScale($scale ?? $this->floatScale, RoundingMode::DOWN);
+
+        $secondScaled = BigDecimal::of($second)
+            ->toScale($scale ?? $this->floatScale, RoundingMode::DOWN);
+
+        return $firstScaled->isEqualTo($secondScaled);
     }
 }

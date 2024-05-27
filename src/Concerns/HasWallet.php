@@ -10,6 +10,7 @@ use Flavorly\Wallet\Exceptions\WalletLockedException;
 use Flavorly\Wallet\Models\Transaction;
 use Flavorly\Wallet\Wallet;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Throwable;
 
 trait HasWallet
 {
@@ -70,7 +71,7 @@ trait HasWallet
      *
      *
      * @throws WalletLockedException
-     * @throws \Throwable
+     * @throws Throwable
      */
     public function credit(float|int|string $amount, array $meta = [], ?string $endpoint = null, bool $throw = false): string
     {
@@ -83,11 +84,32 @@ trait HasWallet
     }
 
     /**
+     * Credit the user quietly without exceptions
+     * @param  float|int|string  $amount
+     * @param  array  $meta
+     * @param  string|null  $endpoint
+     * @return bool
+     */
+    public function creditQuietly(float|int|string $amount, array $meta = [], ?string $endpoint = null): bool
+    {
+        try{
+            return $this->wallet()->credit(
+                amount: $amount,
+                meta: $meta,
+                endpoint: $endpoint,
+                throw: true
+            );
+        } catch (Throwable $e) {
+            return false;
+        }
+    }
+
+    /**
      * Alias for debit
      *
      *
      * @throws WalletLockedException
-     * @throws \Throwable
+     * @throws Throwable
      */
     public function debit(float|int|string $amount, array $meta = [], ?string $endpoint = null, bool $throw = false): string
     {
@@ -97,6 +119,28 @@ trait HasWallet
             endpoint: $endpoint,
             throw: $throw
         );
+    }
+
+    /**
+     * Attempts to Debit the user quietly without exceptions
+     *
+     * @param  float|int|string  $amount
+     * @param  array  $meta
+     * @param  string|null  $endpoint
+     * @return bool
+     */
+    public function debitQuietly(float|int|string $amount, array $meta = [], ?string $endpoint = null): bool
+    {
+        try{
+            return $this->wallet()->debit(
+                amount: $amount,
+                meta: $meta,
+                endpoint: $endpoint,
+                throw: true
+            );
+        } catch (Throwable $e) {
+            return false;
+        }
     }
 
     /**

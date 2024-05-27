@@ -2,6 +2,7 @@
 
 namespace Flavorly\Wallet;
 
+use Brick\Math\Exception\MathException;
 use Closure;
 use Exception;
 use Flavorly\Wallet\Concerns\EvaluatesClosures;
@@ -153,6 +154,7 @@ final class Operation
     /**
      * @throws InvalidOperationArgumentsException
      * @throws NotEnoughBalanceException
+     * @throws MathException
      */
     protected function ensureWeCanDispatch(): void
     {
@@ -160,7 +162,7 @@ final class Operation
             throw new InvalidOperationArgumentsException('Transaction is already being processed');
         }
 
-        if ((int) $this->amount === 0) {
+        if ($this->wallet->math()->isZero($this->amount)) {
             throw new InvalidOperationArgumentsException('Amount cannot be zero');
         }
 
