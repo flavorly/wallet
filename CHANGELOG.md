@@ -2,6 +2,10 @@
 
 All notable changes to `wallet` will be documented in this file.
 
+## Bugfixes - 2024-05-26
+
+fix: issue where balanceRaw would return null
+
 ## Updates & Improvements - 2024-05-25
 
 - PHPStan Level 9
