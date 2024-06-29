@@ -2,6 +2,10 @@
 
 All notable changes to `wallet` will be documented in this file.
 
+## v0.0.8-alpha - 2024-06-29
+
+extracting math helper to laravel-helpers
+
 ## v0.7.8-alpha - 2024-06-29
 
 removed: math class
