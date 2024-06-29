@@ -2,6 +2,11 @@
 
 All notable changes to `wallet` will be documented in this file.
 
+## v0.7.8-alpha - 2024-06-29
+
+removed: math class
+added: laravel-helpers
+
 ## v0.0.7-alpha - 2024-05-27
 
 Better exception handling when checking for balance
