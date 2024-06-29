@@ -19,6 +19,5 @@ class TransactionFailedEvent
         public TransactionType $type,
         public int|float|string $amount,
         public Throwable $exception,
-    ) {
-    }
+    ) {}
 }

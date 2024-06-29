@@ -19,6 +19,5 @@ class TransactionFinishedEvent
         public TransactionType $type,
         public int|float|string $amount,
         public ?Transaction $transaction = null,
-    ) {
-    }
+    ) {}
 }

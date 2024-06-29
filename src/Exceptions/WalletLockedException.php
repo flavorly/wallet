@@ -2,6 +2,4 @@
 
 namespace Flavorly\Wallet\Exceptions;
 
-class WalletLockedException extends \Exception
-{
-}
+class WalletLockedException extends \Exception {}

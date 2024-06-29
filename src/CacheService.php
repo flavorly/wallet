@@ -23,8 +23,7 @@ final class CacheService
     public function __construct(
         protected string $prefix,
         protected bool $isWithin = false,
-    ) {
-    }
+    ) {}
 
     /**
      * Get the cache prefix

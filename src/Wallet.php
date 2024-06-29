@@ -8,6 +8,7 @@ use Brick\Money\Context\AutoContext;
 use Brick\Money\Exception\UnknownCurrencyException;
 use Brick\Money\Money;
 use Closure;
+use Flavorly\LaravelHelpers\Helpers\Math;
 use Flavorly\Wallet\Contracts\WalletContract as WalletInterface;
 use Flavorly\Wallet\Enums\TransactionType;
 use Flavorly\Wallet\Exceptions\NotEnoughBalanceException;

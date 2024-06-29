@@ -16,6 +16,5 @@ class TransactionCreatedEvent
     public function __construct(
         public WalletContract|Model $model,
         public Transaction $transaction,
-    ) {
-    }
+    ) {}
 }

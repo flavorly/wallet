@@ -2,6 +2,4 @@
 
 namespace Flavorly\Wallet\Exceptions;
 
-class InvalidOperationArgumentsException extends \Exception
-{
-}
+class InvalidOperationArgumentsException extends \Exception {}

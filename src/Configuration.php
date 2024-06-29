@@ -15,8 +15,7 @@ final readonly class Configuration
 {
     public function __construct(
         private WalletContract $model,
-    ) {
-    }
+    ) {}
 
     /**
      * Get the number of decimals to use for the wallet

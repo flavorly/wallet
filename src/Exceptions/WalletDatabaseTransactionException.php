@@ -4,6 +4,4 @@ namespace Flavorly\Wallet\Exceptions;
 
 use Exception;
 
-class WalletDatabaseTransactionException extends Exception
-{
-}
+class WalletDatabaseTransactionException extends Exception {}
