@@ -10,9 +10,13 @@ use Flavorly\LaravelHelpers\Helpers\Math\Math;
 use Flavorly\Wallet\Exceptions\WalletLockedException;
 use Flavorly\Wallet\Models\Transaction;
 use Flavorly\Wallet\Wallet;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Throwable;
 
+/**
+ * @mixin Model
+ */
 trait HasWallet
 {
     protected ?Wallet $wallet = null;
@@ -33,6 +37,8 @@ trait HasWallet
 
     /**
      * Get all the transactions for the model.
+     *
+     * @return MorphMany<Transaction>
      */
     public function transactions(): MorphMany
     {
@@ -62,7 +68,7 @@ trait HasWallet
     /**
      * Laravel get Balance Attribute but without any cache
      */
-    public function getBalanceWithoutCacheAttribute(): string
+    public function getBalanceWithoutCacheAttribute(): Math
     {
         return $this->wallet()->balance(cached: false);
     }
@@ -74,7 +80,7 @@ trait HasWallet
      * @throws WalletLockedException
      * @throws Throwable
      */
-    public function credit(float|int|string $amount, array $meta = [], ?string $endpoint = null, bool $throw = false): string
+    public function credit(float|int|string $amount, array $meta = [], ?string $endpoint = null, bool $throw = false): bool
     {
         return $this->wallet()->credit(
             amount: $amount,
@@ -108,7 +114,7 @@ trait HasWallet
      * @throws WalletLockedException
      * @throws Throwable
      */
-    public function debit(float|int|string $amount, array $meta = [], ?string $endpoint = null, bool $throw = false): string
+    public function debit(float|int|string $amount, array $meta = [], ?string $endpoint = null, bool $throw = false): bool
     {
         return $this->wallet()->debit(
             amount: $amount,
