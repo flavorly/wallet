@@ -6,6 +6,7 @@ use Brick\Math\Exception\NumberFormatException;
 use Brick\Math\Exception\RoundingNecessaryException;
 use Brick\Money\Exception\UnknownCurrencyException;
 use Brick\Money\Money;
+use Flavorly\LaravelHelpers\Helpers\Math\Math;
 use Flavorly\Wallet\Exceptions\WalletLockedException;
 use Flavorly\Wallet\Models\Transaction;
 use Flavorly\Wallet\Wallet;
@@ -41,7 +42,7 @@ trait HasWallet
     /**
      * Laravel get Balance Attribute
      */
-    public function getBalanceAttribute(): string
+    public function getBalanceAttribute(): Math
     {
         return $this->wallet()->balance();
     }
