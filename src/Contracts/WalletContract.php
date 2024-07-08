@@ -3,6 +3,7 @@
 namespace Flavorly\Wallet\Contracts;
 
 use Brick\Money\Money;
+use Flavorly\LaravelHelpers\Helpers\Math\Math;
 use Flavorly\Wallet\Models\Transaction;
 use Flavorly\Wallet\Wallet;
 use Illuminate\Database\Eloquent\Model;
@@ -28,7 +29,7 @@ interface WalletContract
     /**
      * Gets the balance attribute cached
      */
-    public function getBalanceAttribute(): string;
+    public function getBalanceAttribute(): Math;
 
     /**
      * Gets the balance attribute without cache
