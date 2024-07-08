@@ -301,17 +301,16 @@ final class Operation
 
         $decimals = $this->wallet->configuration()->getDecimals();
 
-        $currentBalance = $this->wallet->balance();
-        $wantedToTransaction = Math::of($this->amount, $decimals, $decimals)->absolute();
-        $difference = Math::of($currentBalance, $decimals, $decimals)->subtract($wantedToTransaction);
-        $differencePositive = Math::of($difference, $decimals, $decimals)->absolute();
-        $allowedCredit = Math::of($this->wallet->configuration()->getMaximumCredit(), $decimals, $decimals)->ensureScale();
+        $balance = $this->wallet->balance();
+        $transaction_amount = Math::of($this->amount, $decimals, $decimals)->absolute()->toFloat();
+        $difference = Math::of($balance->toFloat(), $decimals, $decimals)->subtract($transaction_amount)->absolute();
+        $credit = Math::of($this->wallet->configuration()->getMaximumCredit(), $decimals, $decimals)->ensureScale()->toFloat();
 
-        if ($currentBalance < $wantedToTransaction && $differencePositive <= $allowedCredit) {
+        if ($balance->isLessThan($transaction_amount) && $difference->isLessThanOrEqual($credit)) {
             return true;
         }
 
-        return $currentBalance >= $wantedToTransaction;
+        return $balance->isGreaterThanOrEqual($transaction_amount);
     }
 
     /**
