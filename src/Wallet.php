@@ -8,7 +8,7 @@ use Brick\Money\Context\AutoContext;
 use Brick\Money\Exception\UnknownCurrencyException;
 use Brick\Money\Money;
 use Closure;
-use Flavorly\LaravelHelpers\Helpers\Math;
+use Flavorly\LaravelHelpers\Helpers\Math\Math;
 use Flavorly\Wallet\Contracts\WalletContract as WalletInterface;
 use Flavorly\Wallet\Enums\TransactionType;
 use Flavorly\Wallet\Exceptions\NotEnoughBalanceException;
@@ -34,19 +34,12 @@ final class Wallet
     protected CacheService $cache;
 
     /**
-     * Math Service is responsible for making calculation
-     * Under the hood it uses Brick\Math to perform arbitrary precision calculations
-     * The wallet math class is different since it casts all the floats as integers
-     */
-    protected Math $math;
-
-    /**
      * Temporary cache for the balance as a static variable
      * This is used to avoid multiple queries to the database or cache hits
      * when dealing with the same wallet multiple times in the same request or
      * for a given process lifecycle
      */
-    protected mixed $localCachedRawBalance = null;
+    protected null|string|float|int $localCachedRawBalance = null;
 
     /**
      * Bootstrap the class & resolve all necessary services
@@ -57,7 +50,6 @@ final class Wallet
     {
         $this->configuration = app(Configuration::class, ['model' => $model]);
         $this->cache = app(CacheService::class, ['prefix' => $model->getKey()]);
-        $this->math = app(Math::class, ['floatScale' => $this->configuration->getDecimals()]);
     }
 
     /**
@@ -161,15 +153,6 @@ final class Wallet
     }
 
     /**
-     * Returns the wallet math service that will ensure
-     * correct scale & precision for the given wallet or transaction
-     */
-    public function math(): Math
-    {
-        return $this->math;
-    }
-
-    /**
      * Returns the wallet configuration
      */
     public function configuration(): Configuration
@@ -181,16 +164,19 @@ final class Wallet
      * Returns the current balance as a string/float representation
      * Optional can be the cached balance or the actual balance calculated
      */
-    public function balance(bool $cached = true): string
+    public function balance(bool $cached = true): Math
     {
-        // @phpstan-ignore-next-line
-        return $this->math()->intToFloat($this->balanceRaw($cached));
+        return Math::of(
+            $this->balanceRaw($cached) ?? 0,
+            $this->configuration()->getDecimals(),
+            $this->configuration()->getDecimals(),
+        )->fromStorage();
     }
 
     /**
      * Returns the balance without any formatting or casting
      */
-    public function balanceRaw(bool $cached = true): mixed
+    public function balanceRaw(bool $cached = true): int|float|string|null
     {
         if (! $cached) {
             $this->refreshBalance();
@@ -219,7 +205,7 @@ final class Wallet
     public function balanceAsMoney(): Money
     {
         return Money::of(
-            $this->balance(),
+            $this->balance()->toNumber(),
             $this->configuration->getCurrency(),
             new AutoContext(),
         );

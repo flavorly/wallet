@@ -50,8 +50,9 @@ final readonly class Configuration
     /**
      * Get the Database/Model Balance Attribute
      */
-    public function getBalance(): mixed
+    public function getBalance(): int|float|string|null
     {
+        // @phpstan-ignore-next-line
         return $this->model->getAttribute($this->getBalanceColumn());
     }
 

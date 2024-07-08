@@ -5,6 +5,7 @@ namespace Flavorly\Wallet;
 use Brick\Math\Exception\MathException;
 use Closure;
 use Exception;
+use Flavorly\LaravelHelpers\Helpers\Math\Math;
 use Flavorly\Wallet\Concerns\EvaluatesClosures;
 use Flavorly\Wallet\Enums\TransactionType;
 use Flavorly\Wallet\Events\TransactionCreatedEvent;
@@ -162,7 +163,11 @@ final class Operation
             throw new InvalidOperationArgumentsException('Transaction is already being processed');
         }
 
-        if ($this->wallet->math()->isZero($this->amount)) {
+        if (Math::of(
+            $this->amount,
+            $this->wallet->configuration()->getDecimals(),
+            $this->wallet->configuration()->getDecimals(),
+        )->isZero()) {
             throw new InvalidOperationArgumentsException('Amount cannot be zero');
         }
 
@@ -294,14 +299,13 @@ final class Operation
             return true;
         }
 
-        // Start with Base Math, because integers could be tricky to calculate
-        $math = $this->wallet->math();
+        $decimals = $this->wallet->configuration()->getDecimals();
 
         $currentBalance = $this->wallet->balance();
-        $wantedToTransaction = $math->abs($this->amount);
-        $difference = $math->sub($currentBalance, $wantedToTransaction);
-        $differencePositive = $math->abs($difference);
-        $allowedCredit = $math->ensureScale($this->wallet->configuration()->getMaximumCredit());
+        $wantedToTransaction = Math::of($this->amount, $decimals, $decimals)->absolute();
+        $difference = Math::of($currentBalance, $decimals, $decimals)->subtract($wantedToTransaction);
+        $differencePositive = Math::of($difference, $decimals, $decimals)->absolute();
+        $allowedCredit = Math::of($this->wallet->configuration()->getMaximumCredit(), $decimals, $decimals)->ensureScale();
 
         if ($currentBalance < $wantedToTransaction && $differencePositive <= $allowedCredit) {
             return true;
@@ -315,9 +319,11 @@ final class Operation
      */
     protected function getAmountForOperation(): string|float|int
     {
+        $decimals = $this->wallet->configuration()->getDecimals();
+
         return $this->type->isDebit() ?
-            $this->wallet->math()->negativeInteger($this->amount) :
-            $this->wallet->math()->floatToInt($this->amount);
+            Math::of($this->amount, $decimals, $decimals)->negative()->toStorageScale() :
+            Math::of($this->amount, $decimals, $decimals)->toStorageScale();
     }
 
     /**
