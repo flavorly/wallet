@@ -216,7 +216,7 @@ final class Wallet
         return Money::of(
             $this->balance()->toNumber(),
             $this->configuration->getCurrency(),
-            new AutoContext(),
+            new AutoContext,
         );
     }
 
