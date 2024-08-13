@@ -7,7 +7,6 @@ use Closure;
 use Exception;
 use Flavorly\LaravelHelpers\Helpers\Math\Math;
 use Flavorly\Wallet\Concerns\EvaluatesClosures;
-use Flavorly\Wallet\Enums\TransactionType;
 use Flavorly\Wallet\Events\TransactionCreatedEvent;
 use Flavorly\Wallet\Events\TransactionCreditEvent;
 use Flavorly\Wallet\Events\TransactionDebitEvent;
@@ -19,7 +18,7 @@ use Flavorly\Wallet\Exceptions\NotEnoughBalanceException;
 use Flavorly\Wallet\Exceptions\WalletLockedException;
 use Flavorly\Wallet\Models\Transaction;
 use Illuminate\Contracts\Cache\LockTimeoutException;
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Model;
 use Throwable;
 
 final class Operation
@@ -50,7 +49,7 @@ final class Operation
     /**
      * The type of transaction debit/credit
      */
-    protected TransactionType $type;
+    protected bool $credit = false;
 
     /**
      * Store the amount of teh transaction
@@ -110,10 +109,15 @@ final class Operation
      */
     protected ?Transaction $transaction = null;
 
-    public function __construct(Wallet $service, TransactionType $type)
+    /**
+     * Related Model of the transaction
+     */
+    protected ?Model $subject = null;
+
+    public function __construct(Wallet $service, bool $credit)
     {
         $this->wallet = $service;
-        $this->type = $type;
+        $this->credit = $credit;
     }
 
     /**
@@ -213,7 +217,7 @@ final class Operation
             // Dispatch the failed event
             event(new TransactionFailedEvent(
                 $this->wallet->model,
-                $this->type,
+                $this->credit,
                 $this->amount,
                 $e
             ));
@@ -227,7 +231,7 @@ final class Operation
             //$this->processing = false;
             event(new TransactionFinishedEvent(
                 $this->wallet->model,
-                $this->type,
+                $this->credit,
                 $this->amount,
                 $this->transaction
             ));
@@ -295,7 +299,7 @@ final class Operation
     protected function hasEnoughBalanceOperation(): bool
     {
         // Its credit, we can just move on
-        if ($this->type->isCredit()) {
+        if ($this->credit) {
             return true;
         }
 
@@ -320,9 +324,10 @@ final class Operation
     {
         $decimals = $this->wallet->configuration()->getDecimals();
 
-        return $this->type->isDebit() ?
-            Math::of($this->amount, $decimals, $decimals)->negative()->toStorageScale() :
-            Math::of($this->amount, $decimals, $decimals)->toStorageScale();
+        return $this->credit
+            ? Math::of($this->amount, $decimals, $decimals)->toStorageScale()
+            : Math::of($this->amount, $decimals, $decimals)->negative()->toStorageScale();
+
     }
 
     /**
@@ -365,7 +370,11 @@ final class Operation
     {
         // Dispatch a started event
         $this->before(callback: function (): void {
-            event(new TransactionStartedEvent($this->wallet->model, $this->type, $this->amount));
+            event(new TransactionStartedEvent(
+                $this->wallet->model,
+                $this->credit,
+                $this->amount
+            ));
         }, shift: true);
 
         // If we should refresh balance cache should be refreshed
@@ -380,15 +389,21 @@ final class Operation
         // After the transaction is inserted, balance refresh callback
         // will also be called and ensures that the balance is updated
         $this->callback(callback: function (): void {
-            /** @phpstan-ignore-next-line */
-            $this->transaction = $this->wallet->model->transactions()->create([
-                'uuid' => Str::uuid(),
-                'type' => $this->type->value(),
+
+            $payload = [
+                'credit' => $this->credit,
                 'amount' => $this->getAmountForOperation(),
-                'decimal_places' => $this->wallet->configuration()->getDecimals(),
                 'meta' => $this->meta,
                 'endpoint' => $this->endpoint,
-            ]);
+            ];
+
+            if ($this->subject) {
+                $payload['subject_id'] = $this->subject->getKey();
+                $payload['subject_type'] = get_class($this->subject);
+            }
+
+            /** @phpstan-ignore-next-line */
+            $this->transaction = $this->wallet->model->transactions()->create($payload);
 
             // Dispatch Transaction Created Event
             event(new TransactionCreatedEvent(
@@ -396,11 +411,13 @@ final class Operation
                 $this->transaction
             ));
 
-            // Send Event Based on Type
-            match ($this->type) {
-                TransactionType::CREDIT => event(new TransactionCreditEvent($this->wallet->model, $this->transaction)),
-                TransactionType::DEBIT => event(new TransactionDebitEvent($this->wallet->model, $this->transaction)),
-            };
+            // Send The Event Based on Credit/Debit
+            if ($this->credit) {
+                event(new TransactionCreditEvent($this->wallet->model, $this->transaction));
+            } else {
+                event(new TransactionDebitEvent($this->wallet->model, $this->transaction));
+            }
+            unset($payload);
         }, shift: true);
 
         return $this;
@@ -466,7 +483,7 @@ final class Operation
      */
     public function credit(float|int|string $amount): Operation
     {
-        $this->type = TransactionType::CREDIT;
+        $this->credit = true;
         $this->amount = $amount;
 
         return $this;
@@ -479,7 +496,7 @@ final class Operation
      */
     public function debit(float|int|string $amount): Operation
     {
-        $this->type = TransactionType::DEBIT;
+        $this->credit = false;
         $this->amount = $amount;
 
         return $this;
@@ -558,6 +575,20 @@ final class Operation
     public function meta(array $meta): Operation
     {
         $this->meta = $meta;
+
+        return $this;
+    }
+
+    /**
+     * Related Model of the transaction
+     *
+     * Ex: User made a transaction to an order
+     *
+     * @return $this
+     */
+    public function subject(?Model $subject = null): Operation
+    {
+        $this->subject = $subject;
 
         return $this;
     }

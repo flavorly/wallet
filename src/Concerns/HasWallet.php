@@ -42,7 +42,7 @@ trait HasWallet
      */
     public function transactions(): MorphMany
     {
-        return $this->morphMany(Transaction::class, 'transactionable');
+        return $this->morphMany(Transaction::class, 'owner');
     }
 
     /**

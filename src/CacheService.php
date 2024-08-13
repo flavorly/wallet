@@ -30,7 +30,7 @@ final class CacheService
      */
     protected function prefix(): string
     {
-        return sprintf('wallet:%s', $this->prefix);
+        return sprintf('wallet:balance:%s', $this->prefix);
     }
 
     /**
@@ -38,7 +38,7 @@ final class CacheService
      */
     protected function blockPrefix(): string
     {
-        return sprintf('wallet-blocks:%s', $this->prefix);
+        return sprintf('wallet-locks:%s', $this->prefix);
     }
 
     /**
@@ -70,21 +70,11 @@ final class CacheService
     }
 
     /**
-     * Redis tags to be used so we can also quickly flush them
-     *
-     * @return string[]
-     */
-    protected function tags(): array
-    {
-        return ['wallets'];
-    }
-
-    /**
      * Check if there is currently Balance cache in place
      */
     public function hasCache(): bool
     {
-        return Cache::tags($this->tags())->has($this->prefix());
+        return Cache::has($this->prefix());
     }
 
     /**
@@ -94,7 +84,7 @@ final class CacheService
      */
     public function balance(): float|int|string
     {
-        $balance = Cache::tags($this->tags())->get($this->prefix());
+        $balance = Cache::get($this->prefix());
         if (is_string($balance) || is_int($balance) || is_float($balance)) {
             return $balance;
         }
@@ -197,7 +187,7 @@ final class CacheService
      */
     public function put(mixed $balance): void
     {
-        Cache::tags($this->tags())->put(
+        Cache::put(
             $this->prefix(),
             $balance,
             $this->ttl(),

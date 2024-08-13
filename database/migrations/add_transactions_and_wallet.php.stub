@@ -6,41 +6,38 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    public function up()
+    public function up(): void
     {
         Schema::create('transactions', function (Blueprint $table) {
-           $table->bigIncrements('id');
-           $table->uuid()->unique();
-           $table->morphs('transactionable');
-           $table->enum('type', ['debit', 'credit'])->index();
-           $table->decimal('amount', 64, 0);
-           $table->smallInteger('decimal_places');
-           $table->string('endpoint')->nullable();
-           $table->json('meta')->nullable();
+            $table->bigIncrements('id');
+            $table->morphs('owner');
+            $table->nullableMorphs('subject');
+            $table->boolean('credit');
+            $table->unsignedBigInteger('amount');
+            $table->string('endpoint')->nullable();
+            $table->jsonb('meta')->nullable();
 
-           $table->timestamps();
+            $table->timestamps();
+            // Commented out until we figure how laravel queries the actual index
+            //$table->index(['owner_type', 'owner_id', 'credit'], 'owner_type_owner_credit_id_ind');
+        });
 
-           $table->index(['transactionable_type', 'transactionable_id'], 'transactionable_type_payable_id_ind');
-           $table->index(['transactionable_type', 'transactionable_id', 'type'], 'transactionable_type_ind');
-           $table->index(['transactionable_type', 'transactionable_id', 'type','endpoint'], 'transactionable_type_endpoint_ind');
-       });
-
-       foreach($this->tables() as $table){
-           Schema::table($table, function (Blueprint $table) {
-               $table->after('remember_token', function(Blueprint $table) {
-                   $table->decimal('wallet_balance', 64, 0)->default(0);
-                   $table->decimal('wallet_credit', 64, 0)->default(0);
-                   $table->unsignedSmallInteger('wallet_decimal_places')->default(config('laravel-wallet.decimal_places'));
-                   $table->string('wallet_currency')->default(config('laravel-wallet.currency'));
-               });
-           });
-       }
+        foreach ($this->tables() as $table) {
+            Schema::table($table, function (Blueprint $table) {
+                $table->after('remember_token', function (Blueprint $table) {
+                    $table->decimal('wallet_balance', 64, 0)->default(0);
+                    $table->decimal('wallet_credit', 64, 0)->default(0);
+                    $table->unsignedSmallInteger('wallet_decimal_places')->default(config('laravel-wallet.decimal_places'));
+                    $table->string('wallet_currency')->default(config('laravel-wallet.currency'));
+                });
+            });
+        }
     }
 
     public function down(): void
     {
         Schema::dropIfExists('transactions');
-        foreach($this->tables() as $table){
+        foreach ($this->tables() as $table) {
             Schema::table($table, function (Blueprint $table) {
                 $table->dropColumn('wallet_balance');
                 $table->dropColumn('wallet_credit');

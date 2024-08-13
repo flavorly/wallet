@@ -10,7 +10,6 @@ use Brick\Money\Money;
 use Closure;
 use Flavorly\LaravelHelpers\Helpers\Math\Math;
 use Flavorly\Wallet\Contracts\WalletContract as WalletInterface;
-use Flavorly\Wallet\Enums\TransactionType;
 use Flavorly\Wallet\Exceptions\NotEnoughBalanceException;
 use Flavorly\Wallet\Exceptions\WalletLockedException;
 use Throwable;
@@ -60,10 +59,15 @@ final class Wallet
      * @throws WalletLockedException
      * @throws Throwable
      */
-    public function credit(float|int|string $amount, array $meta = [], ?string $endpoint = null, bool $throw = false, ?Closure $after = null): bool
-    {
+    public function credit(
+        float|int|string $amount,
+        array $meta = [],
+        ?string $endpoint = null,
+        bool $throw = false,
+        ?Closure $after = null
+    ): bool {
         return $this
-            ->operation(TransactionType::CREDIT)
+            ->operation(true)
             ->meta($meta)
             ->credit($amount)
             ->throw($throw)
@@ -81,10 +85,15 @@ final class Wallet
      * @throws WalletLockedException
      * @throws Throwable
      */
-    public function debit(float|int|string $amount, array $meta = [], ?string $endpoint = null, bool $throw = false, ?Closure $after = null): bool
-    {
+    public function debit(
+        float|int|string $amount,
+        array $meta = [],
+        ?string $endpoint = null,
+        bool $throw = false,
+        ?Closure $after = null
+    ): bool {
         return $this
-            ->operation(TransactionType::DEBIT)
+            ->operation(false)
             ->meta($meta)
             ->debit($amount)
             ->throw($throw)
@@ -99,9 +108,9 @@ final class Wallet
      * This is the main entry point to create transaction
      * Wallet class is just an API for the actual underlying operation object
      */
-    public function operation(TransactionType $type): Operation
+    public function operation(bool $credit): Operation
     {
-        return new Operation($this, $type);
+        return new Operation($this, $credit);
     }
 
     /**
@@ -218,7 +227,7 @@ final class Wallet
     {
         try {
             $this
-                ->operation(TransactionType::DEBIT)
+                ->operation(false)
                 ->debit($amount)
                 ->throw(false)
                 ->pretend()

@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 class Transaction extends Model
 {
     protected $fillable = [
-        'transactionable_type',
-        'transactionable_id',
-        'uuid',
-        'type',
+        'owner_type',
+        'owner_id',
+        'subject_type',
+        'subject_id',
+        'credit',
         'amount',
         'endpoint',
         'meta',
@@ -22,7 +23,15 @@ class Transaction extends Model
     /**
      * @return MorphTo<Model, Transaction>
      */
-    public function transactionable(): MorphTo
+    public function owner(): MorphTo
+    {
+        return $this->morphTo();
+    }
+
+    /**
+     * @return MorphTo<Model, Transaction>
+     */
+    public function subject(): MorphTo
     {
         return $this->morphTo();
     }
@@ -36,6 +45,7 @@ class Transaction extends Model
     {
         return [
             'meta' => 'array',
+            'credit' => 'boolean',
         ];
     }
 }
