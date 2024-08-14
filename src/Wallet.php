@@ -12,6 +12,7 @@ use Flavorly\LaravelHelpers\Helpers\Math\Math;
 use Flavorly\Wallet\Contracts\WalletContract as WalletInterface;
 use Flavorly\Wallet\Exceptions\NotEnoughBalanceException;
 use Flavorly\Wallet\Exceptions\WalletLockedException;
+use Illuminate\Database\Eloquent\Model;
 use Throwable;
 
 /**
@@ -64,7 +65,8 @@ final class Wallet
         array $meta = [],
         ?string $endpoint = null,
         bool $throw = false,
-        ?Closure $after = null
+        ?Closure $after = null,
+        ?Model $subject = null,
     ): bool {
         return $this
             ->operation(true)
@@ -72,6 +74,7 @@ final class Wallet
             ->credit($amount)
             ->throw($throw)
             ->after($after)
+            ->subject($subject)
             ->endpoint($endpoint)
             ->dispatch()
             ->ok();
@@ -90,7 +93,8 @@ final class Wallet
         array $meta = [],
         ?string $endpoint = null,
         bool $throw = false,
-        ?Closure $after = null
+        ?Closure $after = null,
+        ?Model $subject = null,
     ): bool {
         return $this
             ->operation(false)
@@ -98,6 +102,7 @@ final class Wallet
             ->debit($amount)
             ->throw($throw)
             ->after($after)
+            ->subject($subject)
             ->endpoint($endpoint)
             ->dispatch()
             ->ok();
