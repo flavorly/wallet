@@ -65,6 +65,7 @@ trait HasWallet
                 ->formatTo($this->locale ?? config('app.locale'));
         } catch (Exception $e) {
             report($e);
+
             return '0';
         }
     }
@@ -93,7 +94,6 @@ trait HasWallet
             throw: $throw
         );
     }
-
 
     /**
      * Alias for debit

@@ -177,7 +177,7 @@ final class Wallet
     /**
      * Returns the cache service
      */
-    public function cache(int $lockFor = null): CacheService
+    public function cache(?int $lockFor = null): CacheService
     {
         return $this->cache;
     }

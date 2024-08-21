@@ -33,7 +33,6 @@ interface WalletContract
 
     /**
      * Get the balance formatted as money Value
-     * @return string
      */
     public function getBalanceFormattedAttribute(): string;
 
@@ -53,8 +52,6 @@ interface WalletContract
 
     /**
      * Get the balance service instance
-     *
-     * @return  BalanceService
      */
     public function balance(): BalanceService;
 }
