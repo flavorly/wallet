@@ -1,6 +1,6 @@
 <?php
 
-namespace Flavorly\Wallet;
+namespace Flavorly\Wallet\Services;
 
 use Carbon\CarbonImmutable;
 use Flavorly\Wallet\Exceptions\WalletDatabaseTransactionException;

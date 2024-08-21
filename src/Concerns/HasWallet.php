@@ -2,13 +2,11 @@
 
 namespace Flavorly\Wallet\Concerns;
 
-use Brick\Math\Exception\NumberFormatException;
-use Brick\Math\Exception\RoundingNecessaryException;
-use Brick\Money\Exception\UnknownCurrencyException;
-use Brick\Money\Money;
+use Exception;
 use Flavorly\LaravelHelpers\Helpers\Math\Math;
 use Flavorly\Wallet\Exceptions\WalletLockedException;
 use Flavorly\Wallet\Models\Transaction;
+use Flavorly\Wallet\Services\BalanceService;
 use Flavorly\Wallet\Wallet;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
@@ -50,27 +48,33 @@ trait HasWallet
      */
     public function getBalanceAttribute(): Math
     {
+        return $this->wallet()->balance()->get();
+    }
+
+    /**
+     * Get the balance formatted as money Value
+     */
+    public function getBalanceFormattedAttribute(): string
+    {
+        try {
+            return $this
+                ->wallet()
+                ->balance()
+                ->toFormatter()
+                ->toMoney()
+                ->formatTo($this->locale ?? config('app.locale'));
+        } catch (Exception $e) {
+            report($e);
+            return '0';
+        }
+    }
+
+    /**
+     * Get the balance service instance
+     */
+    public function balance(): BalanceService
+    {
         return $this->wallet()->balance();
-    }
-
-    /**
-     * Laravel get Balance Attribute with instance of money
-     *
-     * @throws NumberFormatException
-     * @throws RoundingNecessaryException
-     * @throws UnknownCurrencyException
-     */
-    public function getBalanceAsMoneyAttribute(): Money
-    {
-        return $this->wallet()->balanceAsMoney();
-    }
-
-    /**
-     * Laravel get Balance Attribute but without any cache
-     */
-    public function getBalanceWithoutCacheAttribute(): Math
-    {
-        return $this->wallet()->balance(cached: false);
     }
 
     /**
@@ -90,22 +94,6 @@ trait HasWallet
         );
     }
 
-    /**
-     * Credit the user quietly without exceptions
-     */
-    public function creditQuietly(float|int|string $amount, array $meta = [], ?string $endpoint = null): bool
-    {
-        try {
-            return $this->wallet()->credit(
-                amount: $amount,
-                meta: $meta,
-                endpoint: $endpoint,
-                throw: true
-            );
-        } catch (Throwable $e) {
-            return false;
-        }
-    }
 
     /**
      * Alias for debit
@@ -122,30 +110,5 @@ trait HasWallet
             endpoint: $endpoint,
             throw: $throw
         );
-    }
-
-    /**
-     * Attempts to Debit the user quietly without exceptions
-     */
-    public function debitQuietly(float|int|string $amount, array $meta = [], ?string $endpoint = null): bool
-    {
-        try {
-            return $this->wallet()->debit(
-                amount: $amount,
-                meta: $meta,
-                endpoint: $endpoint,
-                throw: true
-            );
-        } catch (Throwable $e) {
-            return false;
-        }
-    }
-
-    /**
-     * Alias for HasBalanceFor
-     */
-    public function hasBalanceFor(float|int|string $amount): bool
-    {
-        return $this->wallet()->hasBalanceFor($amount);
     }
 }
