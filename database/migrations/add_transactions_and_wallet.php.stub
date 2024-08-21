@@ -27,8 +27,6 @@ return new class extends Migration
                 $table->after('remember_token', function (Blueprint $table) {
                     $table->decimal('wallet_balance', 64, 0)->default(0);
                     $table->decimal('wallet_credit', 64, 0)->default(0);
-                    $table->unsignedSmallInteger('wallet_decimal_places')->default(config('laravel-wallet.decimal_places'));
-                    $table->string('wallet_currency')->default(config('laravel-wallet.currency'));
                 });
             });
         }
@@ -41,8 +39,6 @@ return new class extends Migration
             Schema::table($table, function (Blueprint $table) {
                 $table->dropColumn('wallet_balance');
                 $table->dropColumn('wallet_credit');
-                $table->dropColumn('wallet_decimal_places');
-                $table->dropColumn('wallet_currency');
             });
         }
     }

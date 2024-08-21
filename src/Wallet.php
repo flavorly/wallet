@@ -2,16 +2,14 @@
 
 namespace Flavorly\Wallet;
 
-use Brick\Math\Exception\NumberFormatException;
-use Brick\Math\Exception\RoundingNecessaryException;
-use Brick\Money\Context\AutoContext;
-use Brick\Money\Exception\UnknownCurrencyException;
-use Brick\Money\Money;
 use Closure;
-use Flavorly\LaravelHelpers\Helpers\Math\Math;
-use Flavorly\Wallet\Contracts\WalletContract as WalletInterface;
-use Flavorly\Wallet\Exceptions\NotEnoughBalanceException;
+use Flavorly\Wallet\Contracts\HasWallet as WalletInterface;
 use Flavorly\Wallet\Exceptions\WalletLockedException;
+use Flavorly\Wallet\Services\BalanceService;
+use Flavorly\Wallet\Services\CacheService;
+use Flavorly\Wallet\Services\ConfigurationService;
+use Flavorly\Wallet\Services\OperationService;
+use Illuminate\Contracts\Cache\Lock;
 use Illuminate\Database\Eloquent\Model;
 use Throwable;
 
@@ -26,7 +24,7 @@ final class Wallet
      * Stores the configuration for the wallet
      * such as decimals, currency, columns to update etc
      */
-    protected Configuration $configuration;
+    protected ConfigurationService $configuration;
 
     /**
      * Cache service is responsible for caching & locking
@@ -34,12 +32,9 @@ final class Wallet
     protected CacheService $cache;
 
     /**
-     * Temporary cache for the balance as a static variable
-     * This is used to avoid multiple queries to the database or cache hits
-     * when dealing with the same wallet multiple times in the same request or
-     * for a given process lifecycle
+     * Balance Service
      */
-    protected null|string|float|int $localCachedRawBalance = null;
+    protected BalanceService $balance;
 
     /**
      * Bootstrap the class & resolve all necessary services
@@ -48,8 +43,13 @@ final class Wallet
      */
     public function __construct(public readonly WalletInterface $model)
     {
-        $this->configuration = app(Configuration::class, ['model' => $model]);
+        $this->configuration = app(ConfigurationService::class, ['model' => $model]);
         $this->cache = app(CacheService::class, ['prefix' => $model->getKey()]);
+        $this->balance = app(BalanceService::class, [
+            'model' => $model,
+            'cache' => $this->cache,
+            'configuration' => $this->configuration,
+        ]);
     }
 
     /**
@@ -109,143 +109,57 @@ final class Wallet
     }
 
     /**
+     * Credit the user quietly without exceptions
+     *
+     * @param  array<string,mixed>  $meta
+     */
+    public function creditQuietly(float|int|string $amount, array $meta = [], ?string $endpoint = null): bool
+    {
+        try {
+            return $this->credit(
+                amount: $amount,
+                meta: $meta,
+                endpoint: $endpoint,
+                throw: true
+            );
+        } catch (Throwable $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Debit the user quietly without exceptions
+     *
+     * @param  array<string,mixed>  $meta
+     */
+    public function debitQuietly(float|int|string $amount, array $meta = [], ?string $endpoint = null): bool
+    {
+        try {
+            return $this->debit(
+                amount: $amount,
+                meta: $meta,
+                endpoint: $endpoint,
+                throw: true
+            );
+        } catch (Throwable $e) {
+            return false;
+        }
+    }
+
+    /**
      * Creates a new operation
      * This is the main entry point to create transaction
      * Wallet class is just an API for the actual underlying operation object
      */
-    public function operation(bool $credit): Operation
+    public function operation(bool $credit): OperationService
     {
-        return new Operation($this, $credit);
-    }
-
-    /**
-     * Refresh the balance on database & cache if necessary
-     * Also sums all the values from the transactions to get the current balance always calculated
-     * This ensures that the balance is always correct based on previous transactions
-     *
-     * This method also locks before doing any operation to avoid new transactions from
-     * being created while the balance is being updated
-     *
-     * The only exception is when we perform within the transaction itself
-     * the cache()->isWithin() will return true if we are currently performing
-     * a transaction and so we have already applied a lock inside it.
-     */
-    protected function refreshBalance(): void
-    {
-        $closure = function () {
-            // Sum all the balance
-            $balance = $this->model->transactions()->sum('amount');
-
-            // Cache the balance
-            $this->cache->put($balance);
-
-            // Update the balance on database
-            // Quietly as we dont need more events on this one.
-            $this->model->updateQuietly([
-                $this->configuration->getBalanceColumn() => $balance,
-            ]);
-
-            // Update the local variable just in case we need to re-use it
-            $this->localCachedRawBalance = $balance;
-        };
-
-        if ($this->cache->isWithin()) {
-            $closure();
-
-            return;
-        }
-
-        $this->cache->blockAndWrapInTransaction($closure);
-    }
-
-    /**
-     * Returns the cache service
-     */
-    public function cache(): CacheService
-    {
-        return $this->cache;
-    }
-
-    /**
-     * Returns the wallet configuration
-     */
-    public function configuration(): Configuration
-    {
-        return $this->configuration;
-    }
-
-    /**
-     * Returns the current balance as a string/float representation
-     * Optional can be the cached balance or the actual balance calculated
-     */
-    public function balance(bool $cached = true): Math
-    {
-        return Math::of(
-            $this->balanceRaw($cached) ?? 0,
-            $this->configuration()->getDecimals(),
-            $this->configuration()->getDecimals(),
-        )->fromStorage();
-    }
-
-    /**
-     * Returns the balance without any formatting or casting
-     */
-    public function balanceRaw(bool $cached = true): int|float|string|null
-    {
-        if (! $cached) {
-            $this->refreshBalance();
-        }
-
-        // If we have a local cached balance, return it
-        if ($this->localCachedRawBalance !== null) {
-            return $this->localCachedRawBalance;
-        }
-
-        if ($this->configuration->getBalance()) {
-            $this->localCachedRawBalance = $this->configuration->getBalance();
-            $this->cache()->put($this->localCachedRawBalance);
-        }
-
-        return $this->localCachedRawBalance ?? '0';
-    }
-
-    /**
-     * Return the current Balance as a Money instance
-     *
-     * @throws NumberFormatException
-     * @throws RoundingNecessaryException
-     * @throws UnknownCurrencyException
-     */
-    public function balanceAsMoney(): Money
-    {
-        return Money::of(
-            $this->balance()->toNumber(),
-            $this->configuration->getCurrency(),
-            new AutoContext,
+        return new OperationService(
+            $credit,
+            $this->model,
+            $this->cache,
+            $this->configuration,
+            $this->balance,
         );
-    }
-
-    /**
-     * Check if the wallet/model has enough balance for the given amount
-     */
-    public function hasBalanceFor(float|int|string $amount): bool
-    {
-        try {
-            $this
-                ->operation(false)
-                ->debit($amount)
-                ->throw(false)
-                ->pretend()
-                ->dispatch();
-
-            return true;
-        } catch (NotEnoughBalanceException $e) {
-            return false;
-        } catch (Throwable $e) {
-            report($e);
-
-            return false;
-        }
     }
 
     /**
@@ -254,5 +168,29 @@ final class Wallet
     public function locked(): bool
     {
         return $this->cache->locked();
+    }
+
+    /**
+     * Get the lock instance but without blocking ( yet )
+     */
+    public function lock(?int $lockFor = null): Lock
+    {
+        return $this->cache->lock($lockFor);
+    }
+
+    /**
+     * Returns the cache service
+     */
+    public function cache(?int $lockFor = null): CacheService
+    {
+        return $this->cache;
+    }
+
+    /**
+     * Returns the balance service
+     */
+    public function balance(): BalanceService
+    {
+        return $this->balance;
     }
 }

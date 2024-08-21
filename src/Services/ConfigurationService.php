@@ -1,9 +1,8 @@
 <?php
 
-namespace Flavorly\Wallet;
+namespace Flavorly\Wallet\Services;
 
-use Brick\Money\Currency;
-use Flavorly\Wallet\Contracts\WalletContract;
+use Flavorly\Wallet\Contracts\HasWallet;
 use InvalidArgumentException;
 
 /**
@@ -11,19 +10,18 @@ use InvalidArgumentException;
  * We pass the current model to the configuration class
  * So we can grab an additional configuration from the model
  */
-final readonly class Configuration
+final readonly class ConfigurationService
 {
     public function __construct(
-        private WalletContract $model,
+        private HasWallet $model,
     ) {}
 
     /**
      * Get the number of decimals to use for the wallet
      */
-    public function getDecimals(): int
+    public static function getDecimals(): int
     {
-        //@phpstan-ignore-next-line
-        $decimals = $this->model->getAttribute(config('laravel-wallet.columns.decimals', 'wallet_decimals')) ?? 10;
+        $decimals = config('laravel-wallet.decimal_places', 10);
         if (is_string($decimals)) {
             return (int) $decimals;
         }
@@ -50,7 +48,7 @@ final readonly class Configuration
     /**
      * Get the Database/Model Balance Attribute
      */
-    public function getBalance(): int|float|string|null
+    public function getBalanceCachedOnModel(): int|float|string|null
     {
         // @phpstan-ignore-next-line
         return $this->model->getAttribute($this->getBalanceColumn());
@@ -68,10 +66,10 @@ final readonly class Configuration
     /**
      * Get the wallet currency, defaults to USD if none provided
      */
-    public function getCurrency(): string
+    public static function getCurrency(): string
     {
         //@phpstan-ignore-next-line
-        return $this->model->getAttribute(config('laravel-wallet.columns.currency', 'wallet_currency')) ?? config('laravel-wallet.currency', 'USD');
+        return config('laravel-wallet.currency', 'USD');
     }
 
     /**

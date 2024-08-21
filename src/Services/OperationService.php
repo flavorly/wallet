@@ -1,12 +1,13 @@
 <?php
 
-namespace Flavorly\Wallet;
+namespace Flavorly\Wallet\Services;
 
 use Brick\Math\Exception\MathException;
 use Closure;
 use Exception;
 use Flavorly\LaravelHelpers\Helpers\Math\Math;
 use Flavorly\Wallet\Concerns\EvaluatesClosures;
+use Flavorly\Wallet\Contracts\HasWallet as WalletInterface;
 use Flavorly\Wallet\Events\TransactionCreatedEvent;
 use Flavorly\Wallet\Events\TransactionCreditEvent;
 use Flavorly\Wallet\Events\TransactionDebitEvent;
@@ -21,7 +22,7 @@ use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Database\Eloquent\Model;
 use Throwable;
 
-final class Operation
+final class OperationService
 {
     use EvaluatesClosures;
 
@@ -100,11 +101,6 @@ final class Operation
     protected bool $processing = false;
 
     /**
-     * Main service interface that contains the wallet data
-     */
-    protected Wallet $wallet;
-
-    /**
      * Stores the transaction if it was successful
      */
     protected ?Transaction $transaction = null;
@@ -114,9 +110,13 @@ final class Operation
      */
     protected ?Model $subject = null;
 
-    public function __construct(Wallet $service, bool $credit)
-    {
-        $this->wallet = $service;
+    public function __construct(
+        bool $credit,
+        public readonly WalletInterface $model,
+        public readonly CacheService $cache,
+        public readonly ConfigurationService $configuration,
+        public readonly BalanceService $balance,
+    ) {
         $this->credit = $credit;
     }
 
@@ -169,8 +169,8 @@ final class Operation
 
         if (Math::of(
             $this->amount,
-            $this->wallet->configuration()->getDecimals(),
-            $this->wallet->configuration()->getDecimals(),
+            ConfigurationService::getDecimals(),
+            ConfigurationService::getDecimals(),
         )->isZero()) {
             throw new InvalidOperationArgumentsException('Amount cannot be zero');
         }
@@ -189,7 +189,7 @@ final class Operation
      * @throws Throwable
      * @throws WalletLockedException
      */
-    public function dispatch(): Operation
+    public function dispatch(): OperationService
     {
         // Ensure everything is set
         $this->ensureWeCanDispatch();
@@ -216,7 +216,7 @@ final class Operation
         } catch (Throwable $e) {
             // Dispatch the failed event
             event(new TransactionFailedEvent(
-                $this->wallet->model,
+                $this->model,
                 $this->credit,
                 $this->amount,
                 $e
@@ -230,7 +230,7 @@ final class Operation
             // Set the processing to false
             //$this->processing = false;
             event(new TransactionFinishedEvent(
-                $this->wallet->model,
+                $this->model,
                 $this->credit,
                 $this->amount,
                 $this->transaction
@@ -253,35 +253,34 @@ final class Operation
         $this->processing = true;
 
         // If the resource is locked, throw an exception instantly
-        if ($this->wallet->cache()->locked()) {
+        if ($this->cache->locked()) {
             throw new WalletLockedException(
                 sprintf(
                     'Resource is locked on Model : %s with Key: %s',
-                    $this->wallet->configuration()->getClass(),
-                    $this->wallet->configuration()->getPrimaryKey()
+                    $this->configuration->getClass(),
+                    $this->configuration->getPrimaryKey()
                 ),
             );
         }
 
         try {
             $this
-                ->wallet
-                ->cache()
+                ->cache
                 ->blockAndWrapInTransaction($callback);
         } catch (LockTimeoutException $e) {
             throw new WalletLockedException(
                 sprintf(
                     'Resource is locked on Model : %s with Key: %s',
-                    $this->wallet->configuration()->getClass(),
-                    $this->wallet->configuration()->getPrimaryKey()
+                    $this->configuration->getClass(),
+                    $this->configuration->getPrimaryKey()
                 ),
             );
         } catch (Exception $e) {
             throw new WalletLockedException(
                 sprintf(
                     'Resource is locked on Model : %s with Key: %s Additional: %s',
-                    $this->wallet->configuration()->getClass(),
-                    $this->wallet->configuration()->getPrimaryKey(),
+                    $this->configuration->getClass(),
+                    $this->configuration->getPrimaryKey(),
                     $e->getMessage(),
                 ),
             );
@@ -303,12 +302,12 @@ final class Operation
             return true;
         }
 
-        $decimals = $this->wallet->configuration()->getDecimals();
+        $decimals = ConfigurationService::getDecimals();
 
-        $balance = $this->wallet->balance();
+        $balance = $this->balance->get();
         $transaction_amount = Math::of($this->amount, $decimals, $decimals)->absolute()->toFloat();
         $difference = Math::of($balance->toFloat(), $decimals, $decimals)->subtract($transaction_amount)->absolute();
-        $credit = Math::of($this->wallet->configuration()->getMaximumCredit(), $decimals, $decimals)->ensureScale()->toFloat();
+        $credit = Math::of($this->configuration->getMaximumCredit(), $decimals, $decimals)->ensureScale()->toFloat();
 
         if ($balance->isLessThan($transaction_amount) && $difference->isLessThanOrEqual($credit)) {
             return true;
@@ -322,7 +321,7 @@ final class Operation
      */
     protected function getAmountForOperation(): string|float|int
     {
-        $decimals = $this->wallet->configuration()->getDecimals();
+        $decimals = ConfigurationService::getDecimals();
 
         return $this->credit
             ? Math::of($this->amount, $decimals, $decimals)->toStorageScale()
@@ -366,12 +365,12 @@ final class Operation
      *
      * @return $this
      */
-    protected function compileDefaultCallbacks(): Operation
+    protected function compileDefaultCallbacks(): OperationService
     {
         // Dispatch a started event
         $this->before(callback: function (): void {
             event(new TransactionStartedEvent(
-                $this->wallet->model,
+                $this->model,
                 $this->credit,
                 $this->amount
             ));
@@ -380,7 +379,7 @@ final class Operation
         // If we should refresh balance cache should be refreshed
         if ($this->shouldRefreshBalance) {
             $this->callback(callback: function () {
-                $this->wallet->balance(cached: false);
+                $this->balance->get(cached: false);
             });
         }
 
@@ -402,20 +401,19 @@ final class Operation
                 $payload['subject_type'] = get_class($this->subject);
             }
 
-            /** @phpstan-ignore-next-line */
-            $this->transaction = $this->wallet->model->transactions()->create($payload);
+            $this->transaction = $this->model->transactions()->create($payload);
 
             // Dispatch Transaction Created Event
             event(new TransactionCreatedEvent(
-                $this->wallet->model,
+                $this->model,
                 $this->transaction
             ));
 
             // Send The Event Based on Credit/Debit
             if ($this->credit) {
-                event(new TransactionCreditEvent($this->wallet->model, $this->transaction));
+                event(new TransactionCreditEvent($this->model, $this->transaction));
             } else {
-                event(new TransactionDebitEvent($this->wallet->model, $this->transaction));
+                event(new TransactionDebitEvent($this->model, $this->transaction));
             }
             unset($payload);
         }, shift: true);
@@ -429,7 +427,7 @@ final class Operation
      *
      * @return $this
      */
-    public function before(?callable $callback, bool $shift = false): Operation
+    public function before(?callable $callback, bool $shift = false): OperationService
     {
         if (! $callback) {
             return $this;
@@ -446,7 +444,7 @@ final class Operation
      *
      * @return $this
      */
-    public function after(?callable $callback, bool $shift = false): Operation
+    public function after(?callable $callback, bool $shift = false): OperationService
     {
         if (! $callback) {
             return $this;
@@ -465,7 +463,7 @@ final class Operation
      *
      * @return $this
      */
-    protected function callback(?callable $callback, bool $shift = false): Operation
+    protected function callback(?callable $callback, bool $shift = false): OperationService
     {
         if (! $callback) {
             return $this;
@@ -481,7 +479,7 @@ final class Operation
      *
      * @return $this
      */
-    public function credit(float|int|string $amount): Operation
+    public function credit(float|int|string $amount): OperationService
     {
         $this->credit = true;
         $this->amount = $amount;
@@ -494,7 +492,7 @@ final class Operation
      *
      * @return $this
      */
-    public function debit(float|int|string $amount): Operation
+    public function debit(float|int|string $amount): OperationService
     {
         $this->credit = false;
         $this->amount = $amount;
@@ -509,7 +507,7 @@ final class Operation
      *
      * @return $this
      */
-    public function if(bool|Closure $condition): Operation
+    public function if(bool|Closure $condition): OperationService
     {
         $this->shouldContinue = (bool) $this->evaluate($condition);
 
@@ -521,7 +519,7 @@ final class Operation
      *
      * @return $this
      */
-    public function pretend(): Operation
+    public function pretend(): OperationService
     {
         return $this->if(false);
     }
@@ -533,7 +531,7 @@ final class Operation
      *
      * @return $this
      */
-    public function throw(bool|Closure $condition = true): Operation
+    public function throw(bool|Closure $condition = true): OperationService
     {
         $this->shouldThrow = (bool) $this->evaluate($condition);
 
@@ -547,7 +545,7 @@ final class Operation
      *
      * @return $this
      */
-    public function endpoint(?string $endpoint = null): Operation
+    public function endpoint(?string $endpoint = null): OperationService
     {
         $this->endpoint = $endpoint;
 
@@ -559,7 +557,7 @@ final class Operation
      *
      * @return $this
      */
-    public function dontThrow(bool|Closure $condition = false): Operation
+    public function dontThrow(bool|Closure $condition = false): OperationService
     {
         $this->shouldThrow = (bool) $this->evaluate($condition);
 
@@ -572,7 +570,7 @@ final class Operation
      * @param  array<string,mixed>  $meta
      * @return $this
      */
-    public function meta(array $meta): Operation
+    public function meta(array $meta): OperationService
     {
         $this->meta = $meta;
 
@@ -586,7 +584,7 @@ final class Operation
      *
      * @return $this
      */
-    public function subject(?Model $subject = null): Operation
+    public function subject(?Model $subject = null): OperationService
     {
         $this->subject = $subject;
 
