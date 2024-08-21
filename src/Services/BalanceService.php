@@ -3,7 +3,7 @@
 namespace Flavorly\Wallet\Services;
 
 use Flavorly\LaravelHelpers\Helpers\Math\Math;
-use Flavorly\Wallet\Contracts\WalletContract as WalletInterface;
+use Flavorly\Wallet\Contracts\HasWallet as WalletInterface;
 use Flavorly\Wallet\Exceptions\NotEnoughBalanceException;
 use Flavorly\Wallet\Helpers\MoneyValueFormatter;
 use Throwable;

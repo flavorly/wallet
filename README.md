@@ -45,12 +45,12 @@ return [
 ## Usage
 
 ```php
-use Flavorly\Wallet\Concerns\HasWallet;
-use Flavorly\Wallet\Contracts\WalletContract;
+use Flavorly\Wallet\Concerns\InteractsWithWallet;
+use Flavorly\Wallet\Contracts\HasWallet;
 
-class User extends Model implements WalletContract
+class User extends Model implements HasWallet
 {
-    use HasWallet;
+    use InteractsWithWallet;
 }
 ```
 

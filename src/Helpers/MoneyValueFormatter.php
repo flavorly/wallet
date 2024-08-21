@@ -8,7 +8,6 @@ use Brick\Math\Exception\NumberFormatException;
 use Brick\Money\Context\AutoContext;
 use Brick\Money\Money;
 use Flavorly\LaravelHelpers\Helpers\Math\Math;
-use Flavorly\Wallet\Services\ConfigurationService;
 
 final class MoneyValueFormatter
 {
@@ -33,7 +32,7 @@ final class MoneyValueFormatter
     {
         return Money::of(
             $this->toNumber(),
-            ConfigurationService::getCurrency(),
+            $this->currency,
             new AutoContext,
         );
     }

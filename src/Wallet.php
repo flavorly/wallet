@@ -3,7 +3,7 @@
 namespace Flavorly\Wallet;
 
 use Closure;
-use Flavorly\Wallet\Contracts\WalletContract as WalletInterface;
+use Flavorly\Wallet\Contracts\HasWallet as WalletInterface;
 use Flavorly\Wallet\Exceptions\WalletLockedException;
 use Flavorly\Wallet\Services\BalanceService;
 use Flavorly\Wallet\Services\CacheService;
@@ -110,6 +110,8 @@ final class Wallet
 
     /**
      * Credit the user quietly without exceptions
+     *
+     * @param  array<string,mixed>  $meta
      */
     public function creditQuietly(float|int|string $amount, array $meta = [], ?string $endpoint = null): bool
     {
@@ -127,6 +129,8 @@ final class Wallet
 
     /**
      * Debit the user quietly without exceptions
+     *
+     * @param  array<string,mixed>  $meta
      */
     public function debitQuietly(float|int|string $amount, array $meta = [], ?string $endpoint = null): bool
     {
@@ -177,7 +181,7 @@ final class Wallet
     /**
      * Returns the cache service
      */
-    public function cache(int $lockFor = null): CacheService
+    public function cache(?int $lockFor = null): CacheService
     {
         return $this->cache;
     }

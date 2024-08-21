@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 /**
  * @mixin Model
  */
-trait HasTransactions
+trait InteractsWithTransactions
 {
     /**
      * Get all the transactions for the model.

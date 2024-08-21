@@ -2,7 +2,7 @@
 
 namespace Flavorly\Wallet\Services;
 
-use Flavorly\Wallet\Contracts\WalletContract;
+use Flavorly\Wallet\Contracts\HasWallet;
 use InvalidArgumentException;
 
 /**
@@ -13,7 +13,7 @@ use InvalidArgumentException;
 final readonly class ConfigurationService
 {
     public function __construct(
-        private WalletContract $model,
+        private HasWallet $model,
     ) {}
 
     /**

@@ -7,7 +7,7 @@ use Closure;
 use Exception;
 use Flavorly\LaravelHelpers\Helpers\Math\Math;
 use Flavorly\Wallet\Concerns\EvaluatesClosures;
-use Flavorly\Wallet\Contracts\WalletContract as WalletInterface;
+use Flavorly\Wallet\Contracts\HasWallet as WalletInterface;
 use Flavorly\Wallet\Events\TransactionCreatedEvent;
 use Flavorly\Wallet\Events\TransactionCreditEvent;
 use Flavorly\Wallet\Events\TransactionDebitEvent;
@@ -401,7 +401,6 @@ final class OperationService
                 $payload['subject_type'] = get_class($this->subject);
             }
 
-            /** @phpstan-ignore-next-line */
             $this->transaction = $this->model->transactions()->create($payload);
 
             // Dispatch Transaction Created Event
