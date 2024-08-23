@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  * @property int|null $subject_id
  * @property bool $credit
  * @property int|string|float $amount
- * @property string|null $endpoint
+ * @property string $endpoint
  * @property array|null $meta
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at

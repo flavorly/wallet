@@ -62,12 +62,12 @@ final class Wallet
      */
     public function credit(
         float|int|string $amount,
+        string $endpoint = 'default',
         array $meta = [],
-        ?string $endpoint = null,
         bool $throw = false,
         ?Closure $after = null,
         ?Model $subject = null,
-    ): bool {
+    ): OperationService {
         return $this
             ->operation(true)
             ->meta($meta)
@@ -76,8 +76,7 @@ final class Wallet
             ->after($after)
             ->subject($subject)
             ->endpoint($endpoint)
-            ->dispatch()
-            ->ok();
+            ->dispatch();
     }
 
     /**
@@ -90,12 +89,12 @@ final class Wallet
      */
     public function debit(
         float|int|string $amount,
+        string $endpoint = 'default',
         array $meta = [],
-        ?string $endpoint = null,
         bool $throw = false,
         ?Closure $after = null,
         ?Model $subject = null,
-    ): bool {
+    ): OperationService {
         return $this
             ->operation(false)
             ->meta($meta)
@@ -104,8 +103,7 @@ final class Wallet
             ->after($after)
             ->subject($subject)
             ->endpoint($endpoint)
-            ->dispatch()
-            ->ok();
+            ->dispatch();
     }
 
     /**
@@ -113,17 +111,25 @@ final class Wallet
      *
      * @param  array<string,mixed>  $meta
      */
-    public function creditQuietly(float|int|string $amount, array $meta = [], ?string $endpoint = null): bool
-    {
+    public function creditQuietly(
+        float|int|string $amount,
+        string $endpoint = 'default',
+        ?Model $subject = null,
+        array $meta = []
+    ): OperationService {
+        $operation = $this
+            ->operation(true)
+            ->meta($meta)
+            ->debit($amount)
+            ->throw(false)
+            ->subject($subject)
+            ->endpoint($endpoint);
         try {
-            return $this->credit(
-                amount: $amount,
-                meta: $meta,
-                endpoint: $endpoint,
-                throw: true
-            );
+            return $operation->dispatch();
         } catch (Throwable $e) {
-            return false;
+            ray('Wallet Execption', $e);
+
+            return $operation;
         }
     }
 
@@ -132,17 +138,19 @@ final class Wallet
      *
      * @param  array<string,mixed>  $meta
      */
-    public function debitQuietly(float|int|string $amount, array $meta = [], ?string $endpoint = null): bool
+    public function debitQuietly(float|int|string $amount, string $endpoint = 'default', ?Model $subject = null, array $meta = []): OperationService
     {
+        $operation = $this
+            ->operation(true)
+            ->meta($meta)
+            ->debit($amount)
+            ->throw(false)
+            ->subject($subject)
+            ->endpoint($endpoint);
         try {
-            return $this->debit(
-                amount: $amount,
-                meta: $meta,
-                endpoint: $endpoint,
-                throw: true
-            );
+            return $operation->dispatch();
         } catch (Throwable $e) {
-            return false;
+            return $operation;
         }
     }
 

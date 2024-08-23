@@ -83,7 +83,7 @@ final class OperationService
     /**
      * Stores the endpoint
      */
-    protected ?string $endpoint = null;
+    protected string $endpoint = 'default';
 
     /**
      * How much times to retry before failing
@@ -103,7 +103,7 @@ final class OperationService
     /**
      * Stores the transaction if it was successful
      */
-    protected ?Transaction $transaction = null;
+    public ?Transaction $transaction = null;
 
     /**
      * Related Model of the transaction
@@ -401,7 +401,10 @@ final class OperationService
                 $payload['subject_type'] = get_class($this->subject);
             }
 
-            $this->transaction = $this->model->transactions()->create($payload);
+            $this->transaction = $this
+                ->model
+                ->transactions()
+                ->create($payload);
 
             // Dispatch Transaction Created Event
             event(new TransactionCreatedEvent(
@@ -545,7 +548,7 @@ final class OperationService
      *
      * @return $this
      */
-    public function endpoint(?string $endpoint = null): OperationService
+    public function endpoint(string $endpoint = 'default'): OperationService
     {
         $this->endpoint = $endpoint;
 

@@ -4,13 +4,11 @@ namespace Flavorly\Wallet\Concerns;
 
 use Exception;
 use Flavorly\LaravelHelpers\Helpers\Math\Math;
-use Flavorly\Wallet\Exceptions\WalletLockedException;
 use Flavorly\Wallet\Models\Transaction;
 use Flavorly\Wallet\Services\BalanceService;
 use Flavorly\Wallet\Wallet;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
-use Throwable;
 
 /**
  * @mixin Model
@@ -76,39 +74,5 @@ trait InteractsWithWallet
     public function balance(): BalanceService
     {
         return $this->wallet()->balance();
-    }
-
-    /**
-     * Alias for Credit
-     *
-     *
-     * @throws WalletLockedException
-     * @throws Throwable
-     */
-    public function credit(float|int|string $amount, array $meta = [], ?string $endpoint = null, bool $throw = false): bool
-    {
-        return $this->wallet()->credit(
-            amount: $amount,
-            meta: $meta,
-            endpoint: $endpoint,
-            throw: $throw
-        );
-    }
-
-    /**
-     * Alias for debit
-     *
-     *
-     * @throws WalletLockedException
-     * @throws Throwable
-     */
-    public function debit(float|int|string $amount, array $meta = [], ?string $endpoint = null, bool $throw = false): bool
-    {
-        return $this->wallet()->debit(
-            amount: $amount,
-            meta: $meta,
-            endpoint: $endpoint,
-            throw: $throw
-        );
     }
 }

@@ -36,7 +36,7 @@ final class BalanceService
      * the cache()->isWithin() will return true if we are currently performing
      * a transaction and so we have already applied a lock inside it.
      */
-    protected function refresh(): void
+    public function refresh(): BalanceService
     {
         $closure = function () {
             // Sum all the balance
@@ -58,10 +58,12 @@ final class BalanceService
         if ($this->cache->isWithin()) {
             $closure();
 
-            return;
+            return $this;
         }
 
         $this->cache->blockAndWrapInTransaction($closure);
+
+        return $this;
     }
 
     /**
