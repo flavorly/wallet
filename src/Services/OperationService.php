@@ -111,11 +111,11 @@ final class OperationService
     protected ?Model $subject = null;
 
     public function __construct(
-        bool $credit,
         public readonly WalletInterface $model,
         public readonly CacheService $cache,
         public readonly ConfigurationService $configuration,
         public readonly BalanceService $balance,
+        bool $credit = false,
     ) {
         $this->credit = $credit;
     }
@@ -473,6 +473,18 @@ final class OperationService
         }
 
         $shift ? array_unshift($this->callbacks, $callback) : $this->callbacks[] = $callback;
+
+        return $this;
+    }
+
+    /**
+     * Instructs the amount of the transaction
+     *
+     * @return $this
+     */
+    public function amount(float|int|string $amount): OperationService
+    {
+        $this->amount = $amount;
 
         return $this;
     }

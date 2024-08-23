@@ -120,11 +120,11 @@ final class BalanceService
     {
         try {
             (new OperationService(
-                credit: false,
                 model: $this->model,
                 cache: $this->cache,
                 configuration: $this->configuration,
                 balance: $this,
+                credit: false,
             ))
                 ->debit($amount)
                 ->throw(false)

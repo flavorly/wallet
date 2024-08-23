@@ -69,9 +69,9 @@ final class Wallet
         ?Model $subject = null,
     ): OperationService {
         return $this
-            ->operation(true)
-            ->meta($meta)
+            ->operation()
             ->credit($amount)
+            ->meta($meta)
             ->throw($throw)
             ->after($after)
             ->subject($subject)
@@ -96,9 +96,9 @@ final class Wallet
         ?Model $subject = null,
     ): OperationService {
         return $this
-            ->operation(false)
-            ->meta($meta)
+            ->operation()
             ->debit($amount)
+            ->meta($meta)
             ->throw($throw)
             ->after($after)
             ->subject($subject)
@@ -118,17 +118,15 @@ final class Wallet
         array $meta = []
     ): OperationService {
         $operation = $this
-            ->operation(true)
+            ->operation()
+            ->credit($amount)
             ->meta($meta)
-            ->debit($amount)
             ->throw(false)
             ->subject($subject)
             ->endpoint($endpoint);
         try {
             return $operation->dispatch();
         } catch (Throwable $e) {
-            ray('Wallet Execption', $e);
-
             return $operation;
         }
     }
@@ -141,9 +139,9 @@ final class Wallet
     public function debitQuietly(float|int|string $amount, string $endpoint = 'default', ?Model $subject = null, array $meta = []): OperationService
     {
         $operation = $this
-            ->operation(true)
-            ->meta($meta)
+            ->operation()
             ->debit($amount)
+            ->meta($meta)
             ->throw(false)
             ->subject($subject)
             ->endpoint($endpoint);
@@ -159,10 +157,9 @@ final class Wallet
      * This is the main entry point to create transaction
      * Wallet class is just an API for the actual underlying operation object
      */
-    public function operation(bool $credit): OperationService
+    public function operation(): OperationService
     {
         return new OperationService(
-            $credit,
             $this->model,
             $this->cache,
             $this->configuration,
