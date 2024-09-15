@@ -71,7 +71,7 @@ final class BalanceService
      */
     public function raw(bool $cached = true): int|float|string|null
     {
-        if (! $cached) {
+        if (! $cached || $this->localCachedRawBalance === null) {
             $this->refresh();
         }
 
