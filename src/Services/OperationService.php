@@ -397,8 +397,9 @@ final class OperationService
             ];
 
             if ($this->subject) {
+                $morphClass = method_exists($this->subject, 'getMorphClass') ? $this->subject->getMorphClass() : get_class($this->subject);
                 $payload['subject_id'] = $this->subject->getKey();
-                $payload['subject_type'] = get_class($this->subject);
+                $payload['subject_type'] = $morphClass;
             }
 
             $this->transaction = $this
