@@ -170,7 +170,9 @@ final class CacheService
         /** @var CacheManager $lockConnection */
         $lockConnection = $store->lockConnection();
 
-        return $lockConnection->get(Cache::getPrefix().$this->blockPrefix()) !== null;
+        $prefix = Cache::getPrefix() ?? config('cache.prefix', 'redis__');
+
+        return $lockConnection->get($prefix.$this->blockPrefix()) !== null;
     }
 
     /**
