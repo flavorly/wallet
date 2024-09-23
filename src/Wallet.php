@@ -45,8 +45,8 @@ final class Wallet
     public function __construct(public readonly WalletInterface $model)
     {
         $key = $model->getKey();
-        if(!$key) {
-             throw new InvalidOperationArgumentsException('Model must have a primary key');
+        if (! $key) {
+            throw new InvalidOperationArgumentsException('Model must have a primary key');
         }
         $this->configuration = app(ConfigurationService::class, ['model' => $model]);
         $this->cache = app(CacheService::class, ['prefix' => $model->getKey()]);
