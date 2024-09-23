@@ -4,6 +4,7 @@ namespace Flavorly\Wallet;
 
 use Closure;
 use Flavorly\Wallet\Contracts\HasWallet as WalletInterface;
+use Flavorly\Wallet\Exceptions\InvalidOperationArgumentsException;
 use Flavorly\Wallet\Exceptions\WalletLockedException;
 use Flavorly\Wallet\Services\BalanceService;
 use Flavorly\Wallet\Services\CacheService;
@@ -43,6 +44,10 @@ final class Wallet
      */
     public function __construct(public readonly WalletInterface $model)
     {
+        $key = $model->getKey();
+        if(!$key) {
+             throw new InvalidOperationArgumentsException('Model must have a primary key');
+        }
         $this->configuration = app(ConfigurationService::class, ['model' => $model]);
         $this->cache = app(CacheService::class, ['prefix' => $model->getKey()]);
         $this->balance = app(BalanceService::class, [
