@@ -2,6 +2,10 @@
 
 All notable changes to `wallet` will be documented in this file.
 
+## v0.1.5-alpha - 2024-10-06
+
+bugfixes
+
 ## v0.0.9-alpha - 2024-07-08
 
 refactor: math package migration
