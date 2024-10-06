@@ -4,6 +4,7 @@ namespace Flavorly\Wallet;
 
 use Closure;
 use Flavorly\Wallet\Contracts\HasWallet as WalletInterface;
+use Flavorly\Wallet\Exceptions\InvalidOperationArgumentsException;
 use Flavorly\Wallet\Exceptions\WalletLockedException;
 use Flavorly\Wallet\Services\BalanceService;
 use Flavorly\Wallet\Services\CacheService;
@@ -43,6 +44,10 @@ final class Wallet
      */
     public function __construct(public readonly WalletInterface $model)
     {
+        $key = $model->getKey();
+        if (! $key) {
+            throw new InvalidOperationArgumentsException('Model must have a primary key');
+        }
         $this->configuration = app(ConfigurationService::class, ['model' => $model]);
         $this->cache = app(CacheService::class, ['prefix' => $model->getKey()]);
         $this->balance = app(BalanceService::class, [
@@ -62,22 +67,21 @@ final class Wallet
      */
     public function credit(
         float|int|string $amount,
+        string $endpoint = 'default',
         array $meta = [],
-        ?string $endpoint = null,
         bool $throw = false,
         ?Closure $after = null,
         ?Model $subject = null,
-    ): bool {
+    ): OperationService {
         return $this
-            ->operation(true)
-            ->meta($meta)
+            ->operation()
             ->credit($amount)
+            ->meta($meta)
             ->throw($throw)
             ->after($after)
             ->subject($subject)
             ->endpoint($endpoint)
-            ->dispatch()
-            ->ok();
+            ->dispatch();
     }
 
     /**
@@ -90,22 +94,21 @@ final class Wallet
      */
     public function debit(
         float|int|string $amount,
+        string $endpoint = 'default',
         array $meta = [],
-        ?string $endpoint = null,
         bool $throw = false,
         ?Closure $after = null,
         ?Model $subject = null,
-    ): bool {
+    ): OperationService {
         return $this
-            ->operation(false)
-            ->meta($meta)
+            ->operation()
             ->debit($amount)
+            ->meta($meta)
             ->throw($throw)
             ->after($after)
             ->subject($subject)
             ->endpoint($endpoint)
-            ->dispatch()
-            ->ok();
+            ->dispatch();
     }
 
     /**
@@ -113,17 +116,23 @@ final class Wallet
      *
      * @param  array<string,mixed>  $meta
      */
-    public function creditQuietly(float|int|string $amount, array $meta = [], ?string $endpoint = null): bool
-    {
+    public function creditQuietly(
+        float|int|string $amount,
+        string $endpoint = 'default',
+        ?Model $subject = null,
+        array $meta = []
+    ): OperationService {
+        $operation = $this
+            ->operation()
+            ->credit($amount)
+            ->meta($meta)
+            ->throw(false)
+            ->subject($subject)
+            ->endpoint($endpoint);
         try {
-            return $this->credit(
-                amount: $amount,
-                meta: $meta,
-                endpoint: $endpoint,
-                throw: true
-            );
+            return $operation->dispatch();
         } catch (Throwable $e) {
-            return false;
+            return $operation;
         }
     }
 
@@ -132,17 +141,19 @@ final class Wallet
      *
      * @param  array<string,mixed>  $meta
      */
-    public function debitQuietly(float|int|string $amount, array $meta = [], ?string $endpoint = null): bool
+    public function debitQuietly(float|int|string $amount, string $endpoint = 'default', ?Model $subject = null, array $meta = []): OperationService
     {
+        $operation = $this
+            ->operation()
+            ->debit($amount)
+            ->meta($meta)
+            ->throw(false)
+            ->subject($subject)
+            ->endpoint($endpoint);
         try {
-            return $this->debit(
-                amount: $amount,
-                meta: $meta,
-                endpoint: $endpoint,
-                throw: true
-            );
+            return $operation->dispatch();
         } catch (Throwable $e) {
-            return false;
+            return $operation;
         }
     }
 
@@ -151,10 +162,9 @@ final class Wallet
      * This is the main entry point to create transaction
      * Wallet class is just an API for the actual underlying operation object
      */
-    public function operation(bool $credit): OperationService
+    public function operation(): OperationService
     {
         return new OperationService(
-            $credit,
             $this->model,
             $this->cache,
             $this->configuration,

@@ -83,7 +83,7 @@ final class OperationService
     /**
      * Stores the endpoint
      */
-    protected ?string $endpoint = null;
+    protected string $endpoint = 'default';
 
     /**
      * How much times to retry before failing
@@ -103,7 +103,7 @@ final class OperationService
     /**
      * Stores the transaction if it was successful
      */
-    protected ?Transaction $transaction = null;
+    public ?Transaction $transaction = null;
 
     /**
      * Related Model of the transaction
@@ -111,11 +111,11 @@ final class OperationService
     protected ?Model $subject = null;
 
     public function __construct(
-        bool $credit,
         public readonly WalletInterface $model,
         public readonly CacheService $cache,
         public readonly ConfigurationService $configuration,
         public readonly BalanceService $balance,
+        bool $credit = false,
     ) {
         $this->credit = $credit;
     }
@@ -397,11 +397,15 @@ final class OperationService
             ];
 
             if ($this->subject) {
+                $morphClass = method_exists($this->subject, 'getMorphClass') ? $this->subject->getMorphClass() : get_class($this->subject);
                 $payload['subject_id'] = $this->subject->getKey();
-                $payload['subject_type'] = get_class($this->subject);
+                $payload['subject_type'] = $morphClass;
             }
 
-            $this->transaction = $this->model->transactions()->create($payload);
+            $this->transaction = $this
+                ->model
+                ->transactions()
+                ->create($payload);
 
             // Dispatch Transaction Created Event
             event(new TransactionCreatedEvent(
@@ -470,6 +474,18 @@ final class OperationService
         }
 
         $shift ? array_unshift($this->callbacks, $callback) : $this->callbacks[] = $callback;
+
+        return $this;
+    }
+
+    /**
+     * Instructs the amount of the transaction
+     *
+     * @return $this
+     */
+    public function amount(float|int|string $amount): OperationService
+    {
+        $this->amount = $amount;
 
         return $this;
     }
@@ -545,7 +561,7 @@ final class OperationService
      *
      * @return $this
      */
-    public function endpoint(?string $endpoint = null): OperationService
+    public function endpoint(string $endpoint = 'default'): OperationService
     {
         $this->endpoint = $endpoint;
 

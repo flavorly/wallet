@@ -37,20 +37,6 @@ interface HasWallet
     public function getBalanceFormattedAttribute(): string;
 
     /**
-     * Credits the user or model with the given amount
-     *
-     * @param  array<string,mixed>  $meta
-     */
-    public function credit(float|int|string $amount, array $meta = [], ?string $endpoint = null, bool $throw = false): bool;
-
-    /**
-     * Debits the user or model with the given amount
-     *
-     * @param  array<string,mixed>  $meta
-     */
-    public function debit(float|int|string $amount, array $meta = [], ?string $endpoint = null, bool $throw = false): bool;
-
-    /**
      * Get the balance service instance
      */
     public function balance(): BalanceService;
